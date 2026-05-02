@@ -114,22 +114,3 @@
 ::-webkit-scrollbar-thumb:hover {
   background: var(--color-text-muted);
 }
-
-/* Custom Scrollbar */
-::-webkit-scrollbar {
-  width: 10px;
-}
-
-::-webkit-scrollbar-track {
-  background: var(--color-surface);
-}
-
-::-webkit-scrollbar-thumb {
-  background: var(--color-surface-overlay);
-  border: 3px solid var(--color-surface);
-  border-radius: 10px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: var(--color-text-muted);
-}
