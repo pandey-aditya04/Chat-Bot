@@ -8,7 +8,7 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "build:widget": "vite build --config vite.embed.config.js",
+    "build:widget": "vite build --config vite.widget.config.js",
     "start": "vite preview",
     "seed": "node server/seed.js",
     "setup": "node server/create-users.js"

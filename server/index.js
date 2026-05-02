@@ -1,5 +1,7 @@
 import express from 'express';
 import cors from 'cors';
+import { supabase } from './config/supabase.js';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import dotenv from 'dotenv';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
@@ -55,6 +57,75 @@ app.use('/api/auth', authRoutes);
 app.use('/api/bots', botRoutes);
 app.use('/api/public/bots', chatRoutes);
 app.use('/api/logs', logRoutes);
+
+// ─── PUBLIC: Get bot config (no auth needed) ─────────────────
+app.get('/api/bots/:botId/public', async (req, res) => {
+  try {
+    const { data: bot, error } = await supabase
+      .from('bots')
+      .select('name, theme_color, welcome_message, tone')
+      .eq('id', req.params.botId)
+      .single();
+
+    if (error || !bot) return res.status(404).json({ error: 'Bot not found' });
+
+    res.json({
+      name: bot.name,
+      color: bot.theme_color,
+      welcomeMessage: bot.welcome_message,
+      tone: bot.tone
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// ─── PUBLIC: Chat with a bot ──────────────────────────────────
+app.post('/api/chat', async (req, res) => {
+  try {
+    const { botId, messages } = req.body;
+
+    if (!botId || !messages) {
+      return res.status(400).json({ error: 'botId and messages are required' });
+    }
+
+    const { data: bot, error } = await supabase
+      .from('bots')
+      .select('*, faqs(*)')
+      .eq('id', botId)
+      .single();
+
+    if (error || !bot) return res.status(404).json({ error: 'Bot not found' });
+
+    const faqText = bot.faqs?.map(f => `Q: ${f.question}\nA: ${f.answer}`).join('\n\n') || '';
+
+    const systemPrompt = `You are ${bot.name}, a helpful assistant.
+${faqText ? `Answer based on this knowledge:\n${faqText}` : ''}
+Tone: ${bot.tone || 'friendly and professional'}.
+If you don't know, say: "Let me connect you with our team."`;
+
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    const model = genAI.getGenerativeModel({
+      model: 'gemini-1.5-flash',
+      systemInstruction: systemPrompt
+    });
+
+    const history = messages.slice(0, -1).map(m => ({
+      role: m.role === 'assistant' ? 'model' : 'user',
+      parts: [{ text: m.content }]
+    }));
+
+    const chat = model.startChat({ history });
+    const lastMsg = messages[messages.length - 1].content;
+    const result = await chat.sendMessage(lastMsg);
+    const reply = result.response.text();
+
+    res.json({ reply });
+  } catch (err) {
+    console.error('Chat error:', err.message);
+    res.status(500).json({ error: 'Failed to get AI response' });
+  }
+});
 
 // Health Check
 app.get('/api/health', (req, res) => {
