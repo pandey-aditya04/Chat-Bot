@@ -2,6 +2,8 @@ import { createContext, useContext, useState, useEffect } from 'react';
 
 const AuthContext = createContext();
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
     try {
@@ -11,6 +13,7 @@ export const AuthProvider = ({ children }) => {
       return null;
     }
   });
+  const [token, setToken] = useState(() => localStorage.getItem('chatbot_token'));
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -21,44 +24,57 @@ export const AuthProvider = ({ children }) => {
     }
   }, [user]);
 
+  useEffect(() => {
+    if (token) {
+      localStorage.setItem('chatbot_token', token);
+    } else {
+      localStorage.removeItem('chatbot_token');
+    }
+  }, [token]);
+
   const login = async (email, password) => {
     setLoading(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 800));
-    const userData = {
-      id: 'user_001',
-      email,
-      name: email.split('@')[0].replace(/[._-]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
-      avatar: null,
-      plan: 'Basic',
-      timezone: 'America/New_York',
-      createdAt: '2024-01-15',
-    };
-    setUser(userData);
-    setLoading(false);
-    return userData;
+    try {
+      const res = await fetch(`${API_URL}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Login failed');
+      
+      setToken(data.token);
+      setUser(data.user);
+      return data.user;
+    } finally {
+      setLoading(false);
+    }
   };
 
   const signup = async (name, email, password) => {
     setLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 800));
-    const userData = {
-      id: 'user_' + Date.now(),
-      email,
-      name,
-      avatar: null,
-      plan: 'Free',
-      timezone: 'America/New_York',
-      createdAt: new Date().toISOString().split('T')[0],
-    };
-    setUser(userData);
-    setLoading(false);
-    return userData;
+    try {
+      const res = await fetch(`${API_URL}/auth/signup`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Signup failed');
+      
+      setToken(data.token);
+      setUser(data.user);
+      return data.user;
+    } finally {
+      setLoading(false);
+    }
   };
 
   const logout = () => {
     setUser(null);
+    setToken(null);
     localStorage.removeItem('chatbot_user');
+    localStorage.removeItem('chatbot_token');
   };
 
   const updateProfile = (updates) => {
@@ -66,7 +82,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, signup, logout, updateProfile, isAuthenticated: !!user }}>
+    <AuthContext.Provider value={{ user, token, loading, login, signup, logout, updateProfile, isAuthenticated: !!user }}>
       {children}
     </AuthContext.Provider>
   );

@@ -6,6 +6,7 @@ const faqSchema = new mongoose.Schema({
 });
 
 const botSchema = new mongoose.Schema({
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   name: { type: String, required: true },
   description: { type: String },
   category: { type: String, default: 'General' },

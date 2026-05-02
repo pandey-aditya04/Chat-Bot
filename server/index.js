@@ -1,7 +1,9 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import jwt from 'jsonwebtoken';
 import { connectDB } from './config/db.js';
+import User from './models/User.js';
 import Bot from './models/Bot.js';
 import Log from './models/Log.js';
 
@@ -13,24 +15,76 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
-// Routes
+// Middleware for JWT verification
+const authenticate = async (req, res, next) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) return res.status(401).json({ message: 'Authentication required' });
+
+    const decoded = jwt.verify(token, process.env.MONGODB_SECRET);
+    const user = await User.findById(decoded.id);
+    if (!user) return res.status(401).json({ message: 'User not found' });
+
+    req.user = user;
+    next();
+  } catch (error) {
+    res.status(401).json({ message: 'Invalid token' });
+  }
+};
+
+// Health Check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 
-// Bots API
-app.get('/api/bots', async (req, res) => {
+// Auth Routes
+app.post('/api/auth/signup', async (req, res) => {
   try {
-    const bots = await Bot.find({}).sort({ createdAt: -1 });
+    const { name, email, password } = req.body;
+    const existingUser = await User.findOne({ email });
+    if (existingUser) return res.status(400).json({ message: 'User already exists' });
+
+    const user = new User({ name, email, password });
+    await user.save();
+
+    const token = jwt.sign({ id: user._id }, process.env.MONGODB_SECRET, { expiresIn: '7d' });
+    res.status(201).json({ token, user: { id: user._id, name: user.name, email: user.email, role: user.role } });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    const user = await User.findOne({ email });
+    if (!user || !(await user.comparePassword(password))) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+
+    const token = jwt.sign({ id: user._id }, process.env.MONGODB_SECRET, { expiresIn: '7d' });
+    res.json({ token, user: { id: user._id, name: user.name, email: user.email, role: user.role } });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Bots API (Multitenant)
+app.get('/api/bots', authenticate, async (req, res) => {
+  try {
+    // Admins can see everything, others only see their own
+    const query = req.user.role === 'admin' ? {} : { userId: req.user._id };
+    const bots = await Bot.find(query).sort({ createdAt: -1 });
     res.json(bots);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 });
 
-app.post('/api/bots', async (req, res) => {
+app.post('/api/bots', authenticate, async (req, res) => {
   try {
-    const bot = new Bot(req.body);
+    const botData = { ...req.body, userId: req.user._id };
+    const bot = new Bot(botData);
     const savedBot = await bot.save();
     res.status(201).json(savedBot);
   } catch (error) {
@@ -38,9 +92,10 @@ app.post('/api/bots', async (req, res) => {
   }
 });
 
-app.get('/api/bots/:id', async (req, res) => {
+app.get('/api/bots/:id', authenticate, async (req, res) => {
   try {
-    const bot = await Bot.findById(req.params.id);
+    const query = req.user.role === 'admin' ? { _id: req.params.id } : { _id: req.params.id, userId: req.user._id };
+    const bot = await Bot.findOne(query);
     if (!bot) return res.status(404).json({ message: 'Bot not found' });
     res.json(bot);
   } catch (error) {
@@ -48,10 +103,11 @@ app.get('/api/bots/:id', async (req, res) => {
   }
 });
 
-app.put('/api/bots/:id', async (req, res) => {
+app.put('/api/bots/:id', authenticate, async (req, res) => {
   try {
-    const updatedBot = await Bot.findByIdAndUpdate(
-      req.params.id,
+    const query = req.user.role === 'admin' ? { _id: req.params.id } : { _id: req.params.id, userId: req.user._id };
+    const updatedBot = await Bot.findOneAndUpdate(
+      query,
       { $set: req.body },
       { new: true, runValidators: true }
     );
@@ -62,9 +118,10 @@ app.put('/api/bots/:id', async (req, res) => {
   }
 });
 
-app.delete('/api/bots/:id', async (req, res) => {
+app.delete('/api/bots/:id', authenticate, async (req, res) => {
   try {
-    const result = await Bot.findByIdAndDelete(req.params.id);
+    const query = req.user.role === 'admin' ? { _id: req.params.id } : { _id: req.params.id, userId: req.user._id };
+    const result = await Bot.findOneAndDelete(query);
     if (!result) return res.status(404).json({ message: 'Bot not found' });
     res.json({ message: 'Bot deleted' });
   } catch (error) {
@@ -72,10 +129,16 @@ app.delete('/api/bots/:id', async (req, res) => {
   }
 });
 
-// Logs API
-app.get('/api/logs', async (req, res) => {
+// Logs API (Multitenant)
+app.get('/api/logs', authenticate, async (req, res) => {
   try {
-    const logs = await Log.find({}).sort({ createdAt: -1 });
+    // This is a simplification; ideally Logs should also have userId or be linked to Bots
+    // For now, we'll just filter by bots the user owns
+    const userBots = await Bot.find({ userId: req.user._id }).select('_id');
+    const botIds = userBots.map(b => b._id);
+    
+    const query = req.user.role === 'admin' ? {} : { botId: { $in: botIds } };
+    const logs = await Log.find(query).sort({ createdAt: -1 });
     res.json(logs);
   } catch (error) {
     res.status(500).json({ message: error.message });

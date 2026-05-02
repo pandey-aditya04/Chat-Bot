@@ -2,8 +2,32 @@ import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import Bot from './models/Bot.js';
 import Log from './models/Log.js';
-import { mockBots } from '../src/data/mockBots.js';
-import { mockChatLogs } from '../src/data/mockChatLogs.js';
+// Initial seed data defined internally to remove dependency on mock files
+const mockBots = [
+  {
+    name: 'Acme Support Bot',
+    description: 'General customer support for Acme Corp website.',
+    category: 'Support',
+    status: 'Active',
+    faqs: [
+      { question: 'What are your hours?', answer: '9 AM to 6 PM EST.' },
+      { question: 'Do you offer refunds?', answer: 'Yes, within 30 days.' }
+    ],
+    conversations: 124
+  },
+  {
+    name: 'ShopBot Pro',
+    description: 'E-commerce assistant for tracking orders and product info.',
+    category: 'Sales',
+    status: 'Active',
+    faqs: [
+      { question: 'How to track order?', answer: 'Check your email for the link.' }
+    ],
+    conversations: 85
+  }
+];
+
+const mockChatLogs = []; // Optional: Add sample logs if needed
 
 dotenv.config();
 

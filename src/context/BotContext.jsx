@@ -1,21 +1,33 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+import { useAuth } from './AuthContext';
 
 const BotContext = createContext();
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api' : 'http://localhost:5000/api');
 
 export const BotProvider = ({ children }) => {
+  const { token, isAuthenticated } = useAuth();
   const [bots, setBots] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchBots();
-  }, []);
+    if (isAuthenticated && token) {
+      fetchBots();
+    } else {
+      setBots([]);
+      setLoading(false);
+    }
+  }, [isAuthenticated, token]);
 
   const fetchBots = async () => {
+    setLoading(true);
     try {
-      const response = await fetch(`${API_URL}/bots`);
+      const response = await fetch(`${API_URL}/bots`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
       const data = await response.json();
-      setBots(data.map(bot => ({ ...bot, id: bot._id })));
+      if (response.ok) {
+        setBots(data.map(bot => ({ ...bot, id: bot._id })));
+      }
     } catch (error) {
       console.error('Error fetching bots:', error);
     } finally {
@@ -27,7 +39,10 @@ export const BotProvider = ({ children }) => {
     try {
       const response = await fetch(`${API_URL}/bots`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify(bot),
       });
       const newBot = await response.json();
@@ -43,7 +58,10 @@ export const BotProvider = ({ children }) => {
     try {
       const response = await fetch(`${API_URL}/bots/${id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify(updates),
       });
       const updatedBot = await response.json();
@@ -55,7 +73,10 @@ export const BotProvider = ({ children }) => {
 
   const deleteBot = async (id) => {
     try {
-      await fetch(`${API_URL}/bots/${id}`, { method: 'DELETE' });
+      await fetch(`${API_URL}/bots/${id}`, { 
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
       setBots(prev => prev.filter(b => b.id !== id));
     } catch (error) {
       console.error('Error deleting bot:', error);
