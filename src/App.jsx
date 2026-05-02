@@ -2,11 +2,13 @@ import { Toaster } from 'react-hot-toast';
 import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider } from './context/AuthContext';
 import { BotProvider } from './context/BotContext';
+import { HelmetProvider } from 'react-helmet-async';
 import AppRouter from './router/AppRouter';
 
 function App() {
   return (
-    <ThemeProvider>
+    <HelmetProvider>
+      <ThemeProvider>
       <AuthProvider>
         <BotProvider>
           <AppRouter />
@@ -39,6 +41,7 @@ function App() {
         </BotProvider>
       </AuthProvider>
     </ThemeProvider>
+  </HelmetProvider>
   );
 }
 

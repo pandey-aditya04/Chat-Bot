@@ -1,0 +1,23 @@
+@import "tailwindcss";
+
+/* Scoped styles for the widget */
+#chatbot-builder-root {
+  all: initial; /* Reset everything for the container */
+  font-family: "Geist Sans", system-ui, -apple-system, sans-serif;
+}
+
+#chatbot-builder-root * {
+  box-sizing: border-box;
+}
+
+/* Re-apply some essentials inside the root */
+#chatbot-builder-root button {
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+}
+
+#chatbot-builder-root input {
+  font-family: inherit;
+}

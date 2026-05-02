@@ -11,6 +11,7 @@ import { mockBots } from '../../data/mockBots';
 import ChatWidget from '../../components/chatbot/ChatWidget';
 import HeroOrb from '../../components/3d/HeroOrb';
 import FadeIn from '../../components/ui/FadeIn';
+import { Helmet } from 'react-helmet-async';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
 
@@ -38,6 +39,12 @@ const LandingPage = () => {
 
   return (
     <div className={`min-h-screen ${isDark ? 'bg-surface text-text-primary' : 'light bg-surface text-text-primary'}`}>
+      <Helmet>
+        <title>ChatBot Builder | Build AI Chatbots for Your Website</title>
+        <meta name="description" content="Transform your static FAQ into an intelligent, interactive assistant in minutes. No-code AI platform for building custom chatbots." />
+        <meta property="og:title" content="ChatBot Builder | No-Code AI Assistant" />
+        <meta property="og:description" content="Build AI Chatbots your visitors actually talk to. Transform your static FAQ into an interactive assistant." />
+      </Helmet>
       {/* Navigation */}
       <nav className={`fixed top-0 w-full z-50 ${isDark ? 'bg-surface/80' : 'bg-surface/80'} backdrop-blur-xl border-b border-border`}>
         <div className="max-w-6xl mx-auto px-6 md:px-12">
@@ -142,8 +149,8 @@ const LandingPage = () => {
                 </div>
               </FadeIn>
               
-              <FadeIn delay={0.2}>
-                <h1 className="mb-8">
+              <FadeIn delay={0.2} className="relative z-10 py-2">
+                <h1 className="mb-8 leading-[1.1] pb-2">
                   <span className="gradient-text">Build AI Chatbots</span> your visitors actually talk to.
                 </h1>
               </FadeIn>

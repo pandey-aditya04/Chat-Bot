@@ -49,17 +49,16 @@
   }
 
   body {
-    @apply bg-surface text-text-primary font-sans antialiased selection:bg-brand/30;
-    line-height: 1.65;
+    @apply bg-surface text-text-primary font-sans antialiased selection:bg-brand/30 text-base leading-relaxed;
   }
 
   h1, h2, h3, h4, h5, h6 {
     @apply font-bold tracking-tight text-text-primary;
   }
 
-  h1 { font-size: clamp(2.5rem, 5vw, 4rem); letter-spacing: -0.03em; }
-  h2 { font-size: clamp(1.75rem, 3vw, 2.5rem); letter-spacing: -0.02em; }
-  h3 { font-size: 1.25rem; }
+  h1 { @apply text-4xl md:text-5xl lg:text-6xl; letter-spacing: -0.03em; line-height: 1.1; }
+  h2 { @apply text-2xl md:text-3xl lg:text-4xl; letter-spacing: -0.02em; }
+  h3 { @apply text-xl md:text-2xl; }
 
   /* Focus States */
   *:focus-visible {

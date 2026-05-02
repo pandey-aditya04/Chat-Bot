@@ -1,8 +1,8 @@
-import mongoose from 'mongoose';
+import { supabase } from './config/supabase.js';
 import dotenv from 'dotenv';
-import Bot from './models/Bot.js';
-import Log from './models/Log.js';
-// Initial seed data defined internally to remove dependency on mock files
+
+dotenv.config();
+
 const mockBots = [
   {
     name: 'Acme Support Bot',
@@ -13,7 +13,7 @@ const mockBots = [
       { question: 'What are your hours?', answer: '9 AM to 6 PM EST.' },
       { question: 'Do you offer refunds?', answer: 'Yes, within 30 days.' }
     ],
-    conversations: 124
+    conversations_count: 124
   },
   {
     name: 'ShopBot Pro',
@@ -23,47 +23,61 @@ const mockBots = [
     faqs: [
       { question: 'How to track order?', answer: 'Check your email for the link.' }
     ],
-    conversations: 85
+    conversations_count: 85
   }
 ];
 
-const mockChatLogs = []; // Optional: Add sample logs if needed
-
-dotenv.config();
-
-const url = process.env.MONGODB_URI || 'mongodb://localhost:27017';
-const dbName = process.env.DB_NAME || 'chatbot_builder';
-
 const seedDB = async () => {
   try {
-    const connectionString = (url.includes('mongodb+srv') || url.split('/').length > 3) 
-      ? url 
-      : `${url}/${dbName}`;
-    await mongoose.connect(connectionString);
-    console.log('Connected to MongoDB for seeding...');
-    
-    // Clear existing data
-    await Bot.deleteMany({});
-    await Log.deleteMany({});
-    console.log('Cleared existing data.');
-    
-    // Seed Bots
-    const botsToInsert = mockBots.map(({ id, ...rest }) => ({ ...rest }));
-    const insertedBots = await Bot.insertMany(botsToInsert);
-    console.log(`Seeded ${insertedBots.length} bots.`);
-    
-    // Seed Logs (optional, mapping botId if needed)
-    const logsToInsert = mockChatLogs.map(({ id, botId, ...rest }) => {
-      // Find the new botId for this botName
-      const bot = insertedBots.find(b => b.name === rest.botName);
-      return {
-        ...rest,
-        botId: bot ? bot._id : null
-      };
-    });
-    await Log.insertMany(logsToInsert);
-    console.log(`Seeded ${logsToInsert.length} chat logs.`);
-    
+    console.log('Starting Supabase seed...');
+
+    // 1. Get a user to associate with
+    const { data: users, error: userError } = await supabase
+      .from('profiles')
+      .select('id')
+      .limit(1);
+
+    if (userError || !users || users.length === 0) {
+      console.error('No users found in profiles table. Please sign up a user first.');
+      process.exit(1);
+    }
+
+    const userId = users[0].id;
+    console.log(`Seeding data for User ID: ${userId}`);
+
+    // 2. Clear existing data (Optional/Careful)
+    // await supabase.from('bots').delete().eq('user_id', userId);
+
+    // 3. Seed Bots
+    for (const botData of mockBots) {
+      const { faqs, ...rest } = botData;
+      
+      const { data: bot, error: botError } = await supabase
+        .from('bots')
+        .insert([{ ...rest, user_id: userId }])
+        .select()
+        .single();
+
+      if (botError) throw botError;
+
+      // Seed FAQs
+      if (faqs && faqs.length > 0) {
+        const faqsToInsert = faqs.map(f => ({
+          bot_id: bot.id,
+          question: f.question,
+          answer: f.answer
+        }));
+
+        const { error: faqError } = await supabase
+          .from('faqs')
+          .insert(faqsToInsert);
+
+        if (faqError) throw faqError;
+      }
+      
+      console.log(`Seeded bot: ${bot.name}`);
+    }
+
     console.log('Database seeded successfully!');
     process.exit(0);
   } catch (error) {
