@@ -1,8 +1,9 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { connectDB, getDB } from './config/db.js';
-import { ObjectId } from 'mongodb';
+import { connectDB } from './config/db.js';
+import Bot from './models/Bot.js';
+import Log from './models/Log.js';
 
 dotenv.config();
 
@@ -20,8 +21,7 @@ app.get('/api/health', (req, res) => {
 // Bots API
 app.get('/api/bots', async (req, res) => {
   try {
-    const db = getDB();
-    const bots = await db.collection('bots').find({}).toArray();
+    const bots = await Bot.find({}).sort({ createdAt: -1 });
     res.json(bots);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -30,15 +30,9 @@ app.get('/api/bots', async (req, res) => {
 
 app.post('/api/bots', async (req, res) => {
   try {
-    const db = getDB();
-    const botData = {
-      ...req.body,
-      created: new Date().toISOString().split('T')[0],
-      faqCount: req.body.faqs?.length || 0,
-      conversations: 0
-    };
-    const result = await db.collection('bots').insertOne(botData);
-    res.status(201).json({ ...botData, _id: result.insertedId });
+    const bot = new Bot(req.body);
+    const savedBot = await bot.save();
+    res.status(201).json(savedBot);
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
@@ -46,8 +40,7 @@ app.post('/api/bots', async (req, res) => {
 
 app.get('/api/bots/:id', async (req, res) => {
   try {
-    const db = getDB();
-    const bot = await db.collection('bots').findOne({ _id: new ObjectId(req.params.id) });
+    const bot = await Bot.findById(req.params.id);
     if (!bot) return res.status(404).json({ message: 'Bot not found' });
     res.json(bot);
   } catch (error) {
@@ -57,16 +50,13 @@ app.get('/api/bots/:id', async (req, res) => {
 
 app.put('/api/bots/:id', async (req, res) => {
   try {
-    const db = getDB();
-    const { _id, ...updateData } = req.body;
-    updateData.faqCount = updateData.faqs?.length || 0;
-    const result = await db.collection('bots').findOneAndUpdate(
-      { _id: new ObjectId(req.params.id) },
-      { $set: updateData },
-      { returnDocument: 'after' }
+    const updatedBot = await Bot.findByIdAndUpdate(
+      req.params.id,
+      { $set: req.body },
+      { new: true, runValidators: true }
     );
-    if (!result) return res.status(404).json({ message: 'Bot not found' });
-    res.json(result);
+    if (!updatedBot) return res.status(404).json({ message: 'Bot not found' });
+    res.json(updatedBot);
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
@@ -74,9 +64,8 @@ app.put('/api/bots/:id', async (req, res) => {
 
 app.delete('/api/bots/:id', async (req, res) => {
   try {
-    const db = getDB();
-    const result = await db.collection('bots').deleteOne({ _id: new ObjectId(req.params.id) });
-    if (result.deletedCount === 0) return res.status(404).json({ message: 'Bot not found' });
+    const result = await Bot.findByIdAndDelete(req.params.id);
+    if (!result) return res.status(404).json({ message: 'Bot not found' });
     res.json({ message: 'Bot deleted' });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -86,17 +75,21 @@ app.delete('/api/bots/:id', async (req, res) => {
 // Logs API
 app.get('/api/logs', async (req, res) => {
   try {
-    const db = getDB();
-    const logs = await db.collection('logs').find({}).sort({ timestamp: -1 }).toArray();
+    const logs = await Log.find({}).sort({ createdAt: -1 });
     res.json(logs);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 });
 
-// Connect to DB and Start Server
-connectDB().then(() => {
+// Connect to DB
+connectDB();
+
+// Only listen if not in Vercel environment
+if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
   app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
   });
-});
+}
+
+export default app;
