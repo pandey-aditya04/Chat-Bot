@@ -5,9 +5,11 @@ import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import Card from '../../components/ui/Card';
 import ChatWidget from '../../components/chatbot/ChatWidget';
+import FadeIn from '../../components/ui/FadeIn';
 import { useBots } from '../../context/BotContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useToast } from '../../hooks/useToast';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const stepLabels = ['Basic Info', 'FAQs', 'Behavior', 'Appearance', 'Preview'];
 
@@ -57,8 +59,8 @@ const CreateBot = () => {
     updateForm('faqs', updated);
   };
 
-  const handlePublish = () => {
-    const bot = addBot({
+  const handlePublish = async () => {
+    const bot = await addBot({
       name: form.name, website: form.website, description: form.description,
       faqs: form.faqs, status: 'Active', tone: form.tone,
       fallbackMessage: form.fallbackMessage, primaryColor: form.primaryColor,
@@ -70,168 +72,201 @@ const CreateBot = () => {
     navigate(`/dashboard/bots/${bot.id}/embed`);
   };
 
-  const handleSaveDraft = () => {
-    addBot({ ...form, status: 'Draft', faqs: form.faqs });
+  const handleSaveDraft = async () => {
+    await addBot({ ...form, status: 'Draft', faqs: form.faqs });
     toast.success('Bot saved as draft');
     navigate('/dashboard/bots');
   };
 
+  const stepVariants = {
+    initial: { opacity: 0, x: 20 },
+    animate: { opacity: 1, x: 0 },
+    exit: { opacity: 0, x: -20 },
+  };
+
   return (
-    <div className="max-w-6xl mx-auto animate-fade-in">
+    <div className="max-w-4xl mx-auto">
+      {/* Header */}
+      <div className="mb-12">
+        <h2 className="text-3xl font-black tracking-tight mb-2">Create New Bot</h2>
+        <p className="text-text-secondary">Follow the steps to configure your AI assistant.</p>
+      </div>
+
       {/* Stepper */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between mb-12 bg-surface-raised/50 p-6 rounded-2xl border border-border">
         {stepLabels.map((label, i) => (
-          <div key={i} className="flex items-center flex-1">
+          <div key={i} className="flex items-center flex-1 last:flex-none">
             <div className="flex flex-col items-center">
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold transition-all ${
-                i < step ? 'bg-success text-white' : i === step ? 'bg-primary text-white shadow-lg shadow-primary/30' : isDark ? 'bg-dark-surface-2 text-dark-text-secondary border border-dark-border' : 'bg-light-surface-2 text-light-text-secondary border border-light-border'
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-black transition-all duration-500 ${
+                i < step 
+                  ? 'bg-success text-white shadow-lg shadow-success/20' 
+                  : i === step 
+                    ? 'bg-brand text-white shadow-glow-brand scale-110' 
+                    : 'bg-surface-overlay text-text-muted border border-border'
               }`}>
                 {i < step ? <Check className="w-5 h-5" /> : i + 1}
               </div>
-              <span className={`text-xs mt-2 font-medium hidden sm:block ${i <= step ? 'text-primary' : isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'}`}>{label}</span>
+              <span className={`text-[10px] mt-3 font-black uppercase tracking-widest hidden sm:block ${
+                i <= step ? 'text-brand' : 'text-text-muted'
+              }`}>
+                {label}
+              </span>
             </div>
-            {i < 4 && <div className={`flex-1 h-0.5 mx-2 ${i < step ? 'bg-success' : isDark ? 'bg-dark-border' : 'bg-light-border'}`} />}
+            {i < 4 && (
+              <div className="flex-1 h-1 mx-4 rounded-full bg-surface-overlay overflow-hidden">
+                <motion.div 
+                  className="h-full bg-success"
+                  initial={{ width: '0%' }}
+                  animate={{ width: i < step ? '100%' : '0%' }}
+                  transition={{ duration: 0.5 }}
+                />
+              </div>
+            )}
           </div>
         ))}
       </div>
 
       {/* Step Content */}
-      <Card className="mb-6">
-        {step === 0 && (
-          <div className="space-y-5">
-            <h3 className={`text-lg font-semibold ${isDark ? 'text-dark-text' : 'text-light-text'}`}>Basic Information</h3>
-            <Input label="Bot Name" placeholder="e.g. Support Bot" value={form.name} onChange={e => updateForm('name', e.target.value)} error={errors.name} required id="bot-name" />
-            <Input label="Website URL" type="url" placeholder="https://yourwebsite.com" value={form.website} onChange={e => updateForm('website', e.target.value)} error={errors.website} required id="bot-website" />
-            <div className="space-y-1.5">
-              <label className={`block text-sm font-medium ${isDark ? 'text-dark-text' : 'text-light-text'}`}>Description</label>
-              <textarea value={form.description} onChange={e => updateForm('description', e.target.value)} placeholder="Describe what this chatbot does..." rows={3} className={`w-full rounded-xl px-4 py-3 text-sm transition-all focus:outline-none focus:ring-2 focus:ring-primary/50 ${isDark ? 'bg-dark-surface-2 border border-dark-border text-dark-text placeholder-dark-text-secondary' : 'bg-light-surface-2 border border-light-border text-light-text placeholder-light-text-secondary'}`} />
-            </div>
-          </div>
-        )}
-
-        {step === 1 && (
-          <div className="space-y-5">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className={`text-lg font-semibold ${isDark ? 'text-dark-text' : 'text-light-text'}`}>FAQ Questions</h3>
-                <p className={`text-sm mt-1 ${isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'}`}>{form.faqs.length} question{form.faqs.length !== 1 ? 's' : ''} added</p>
-              </div>
-              <div className="flex gap-2">
-                <Button variant="secondary" size="sm" icon={Upload} onClick={() => toast.info('CSV import coming soon!')}>Import CSV</Button>
-                <Button variant="secondary" size="sm" icon={Plus} onClick={addFaq}>Add FAQ</Button>
-              </div>
-            </div>
-            {errors.faqs && <p className="text-danger text-sm">{errors.faqs}</p>}
-            <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2">
-              {form.faqs.map((faq, i) => (
-                <div key={i} className={`rounded-xl p-4 ${isDark ? 'bg-dark-surface-2 border border-dark-border' : 'bg-light-surface-2 border border-light-border'}`}>
-                  <div className="flex items-center justify-between mb-3">
-                    <span className={`text-xs font-medium ${isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'}`}>FAQ #{i + 1}</span>
-                    {form.faqs.length > 1 && (
-                      <button onClick={() => removeFaq(i)} className="p-1 rounded-lg hover:bg-danger/10 text-danger transition-colors"><X className="w-4 h-4" /></button>
-                    )}
-                  </div>
-                  <div className="space-y-3">
-                    <Input placeholder="Enter question..." value={faq.question} onChange={e => updateFaq(i, 'question', e.target.value)} error={errors[`faq_q_${i}`]} id={`faq-q-${i}`} />
-                    <textarea value={faq.answer} onChange={e => updateFaq(i, 'answer', e.target.value)} placeholder="Enter answer..." rows={2} className={`w-full rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 ${isDark ? 'bg-dark-bg border border-dark-border text-dark-text placeholder-dark-text-secondary' : 'bg-white border border-light-border text-light-text placeholder-light-text-secondary'} ${errors[`faq_a_${i}`] ? 'border-danger' : ''}`} />
-                    {errors[`faq_a_${i}`] && <p className="text-danger text-xs">{errors[`faq_a_${i}`]}</p>}
+      <div className="relative min-h-[400px]">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={step}
+            variants={stepVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={{ duration: 0.3, ease: 'easeInOut' }}
+          >
+            <Card className="mb-8 border-border/60 shadow-xl shadow-black/10">
+              {step === 0 && (
+                <div className="space-y-6">
+                  <h3 className="text-sm font-black uppercase tracking-widest text-text-primary mb-2">Basic Information</h3>
+                  <Input label="Bot Name" placeholder="e.g. Support Bot" value={form.name} onChange={e => updateForm('name', e.target.value)} error={errors.name} required id="bot-name" />
+                  <Input label="Website URL" type="url" placeholder="https://yourwebsite.com" value={form.website} onChange={e => updateForm('website', e.target.value)} error={errors.website} required id="bot-website" />
+                  <div className="space-y-2">
+                    <label className="block text-xs font-black uppercase tracking-widest text-text-secondary">Description</label>
+                    <textarea value={form.description} onChange={e => updateForm('description', e.target.value)} placeholder="Describe what this chatbot does..." rows={3} className="w-full rounded-xl px-4 py-3 text-sm bg-surface-overlay border border-border text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-brand/50 transition-all" />
                   </div>
                 </div>
-              ))}
-            </div>
-          </div>
-        )}
+              )}
 
-        {step === 2 && (
-          <div className="space-y-5">
-            <h3 className={`text-lg font-semibold ${isDark ? 'text-dark-text' : 'text-light-text'}`}>Bot Behavior</h3>
-            <div className="space-y-1.5">
-              <label className={`block text-sm font-medium ${isDark ? 'text-dark-text' : 'text-light-text'}`}>Tone</label>
-              <select value={form.tone} onChange={e => updateForm('tone', e.target.value)} className={`w-full rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 ${isDark ? 'bg-dark-surface-2 border border-dark-border text-dark-text' : 'bg-light-surface-2 border border-light-border text-light-text'}`}>
-                {['Friendly','Formal','Professional','Sales-Focused','Casual'].map(t => <option key={t} value={t}>{t}</option>)}
-              </select>
-            </div>
-            <Input label="Fallback Message" value={form.fallbackMessage} onChange={e => updateForm('fallbackMessage', e.target.value)} id="fallback" />
-            <div className="space-y-1.5">
-              <label className={`block text-sm font-medium ${isDark ? 'text-dark-text' : 'text-light-text'}`}>Custom Instructions</label>
-              <textarea value={form.customInstructions} onChange={e => updateForm('customInstructions', e.target.value)} placeholder="e.g. Always recommend contacting support for billing issues." rows={3} className={`w-full rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 ${isDark ? 'bg-dark-surface-2 border border-dark-border text-dark-text placeholder-dark-text-secondary' : 'bg-light-surface-2 border border-light-border text-light-text placeholder-light-text-secondary'}`} />
-            </div>
-            <div className="space-y-1.5">
-              <label className={`block text-sm font-medium ${isDark ? 'text-dark-text' : 'text-light-text'}`}>Max Response Length</label>
-              <select value={form.maxResponseLength} onChange={e => updateForm('maxResponseLength', e.target.value)} className={`w-full rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 ${isDark ? 'bg-dark-surface-2 border border-dark-border text-dark-text' : 'bg-light-surface-2 border border-light-border text-light-text'}`}>
-                {['Short','Medium','Detailed'].map(t => <option key={t} value={t}>{t}</option>)}
-              </select>
-            </div>
-          </div>
-        )}
-
-        {step === 3 && (
-          <div className="grid lg:grid-cols-2 gap-8">
-            <div className="space-y-5">
-              <h3 className={`text-lg font-semibold ${isDark ? 'text-dark-text' : 'text-light-text'}`}>Appearance</h3>
-              <div className="space-y-1.5">
-                <label className={`block text-sm font-medium ${isDark ? 'text-dark-text' : 'text-light-text'}`}>Primary Color</label>
-                <div className="flex items-center gap-3">
-                  <input type="color" value={form.primaryColor} onChange={e => updateForm('primaryColor', e.target.value)} className="w-12 h-12 rounded-xl cursor-pointer border-0" />
-                  <span className={`text-sm font-mono ${isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'}`}>{form.primaryColor}</span>
-                </div>
-              </div>
-              <div className="space-y-1.5">
-                <label className={`block text-sm font-medium ${isDark ? 'text-dark-text' : 'text-light-text'}`}>Chat Position</label>
-                <div className="flex gap-3">
-                  {['Left','Right'].map(pos => (
-                    <button key={pos} onClick={() => updateForm('chatPosition', pos)} className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-all ${form.chatPosition === pos ? 'bg-primary text-white' : isDark ? 'bg-dark-surface-2 text-dark-text-secondary border border-dark-border' : 'bg-light-surface-2 text-light-text-secondary border border-light-border'}`}>{pos}</button>
-                  ))}
-                </div>
-              </div>
-              <Input label="Welcome Message" value={form.welcomeMessage} onChange={e => updateForm('welcomeMessage', e.target.value)} id="welcome" />
-              <Input label="Chat Window Title" value={form.chatWindowTitle} onChange={e => updateForm('chatWindowTitle', e.target.value)} id="title" />
-              <div className="space-y-1.5">
-                <label className={`block text-sm font-medium ${isDark ? 'text-dark-text' : 'text-light-text'}`}>Launcher Icon</label>
-                <select value={form.launcherIcon} onChange={e => updateForm('launcherIcon', e.target.value)} className={`w-full rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 ${isDark ? 'bg-dark-surface-2 border border-dark-border text-dark-text' : 'bg-light-surface-2 border border-light-border text-light-text'}`}>
-                  {['Chat Bubble','Robot','Headphones','Custom'].map(t => <option key={t} value={t}>{t}</option>)}
-                </select>
-              </div>
-              <div className="space-y-1.5">
-                <label className={`block text-sm font-medium ${isDark ? 'text-dark-text' : 'text-light-text'}`}>Bot Avatar</label>
-                <div className={`flex items-center gap-4 p-4 rounded-xl border-2 border-dashed ${isDark ? 'border-dark-border' : 'border-light-border'}`}>
-                  <div className="w-14 h-14 rounded-xl flex items-center justify-center" style={{ backgroundColor: form.primaryColor + '20' }}>
-                    <Bot className="w-7 h-7" style={{ color: form.primaryColor }} />
+              {step === 1 && (
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-sm font-black uppercase tracking-widest text-text-primary">FAQ Questions</h3>
+                      <p className="text-xs text-text-muted mt-1">{form.faqs.length} entries added</p>
+                    </div>
+                    <Button variant="outline" size="sm" icon={Plus} onClick={addFaq} className="text-xs">Add FAQ</Button>
                   </div>
-                  <button onClick={() => toast.info('Avatar upload coming soon!')} className="text-sm text-primary font-medium">Upload Image</button>
+                  {errors.faqs && <p className="text-danger text-xs font-bold">{errors.faqs}</p>}
+                  <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+                    {form.faqs.map((faq, i) => (
+                      <div key={i} className="rounded-2xl p-5 bg-surface-overlay border border-border group">
+                        <div className="flex items-center justify-between mb-4">
+                          <span className="text-[10px] font-black uppercase tracking-widest text-text-muted">FAQ Entry #{i + 1}</span>
+                          {form.faqs.length > 1 && (
+                            <button onClick={() => removeFaq(i)} className="p-1.5 rounded-lg hover:bg-danger/10 text-danger transition-all opacity-0 group-hover:opacity-100"><X className="w-4 h-4" /></button>
+                          )}
+                        </div>
+                        <div className="space-y-4">
+                          <Input placeholder="Enter question..." value={faq.question} onChange={e => updateFaq(i, 'question', e.target.value)} error={errors[`faq_q_${i}`]} id={`faq-q-${i}`} />
+                          <textarea value={faq.answer} onChange={e => updateFaq(i, 'answer', e.target.value)} placeholder="Enter answer..." rows={2} className={`w-full rounded-xl px-4 py-3 text-sm bg-surface-raised border border-border text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-brand/50 transition-all ${errors[`faq_a_${i}`] ? 'border-danger' : ''}`} />
+                          {errors[`faq_a_${i}`] && <p className="text-danger text-[10px] font-bold">{errors[`faq_a_${i}`]}</p>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            </div>
-            {/* Live Preview */}
-            <div>
-              <h4 className={`text-sm font-medium mb-3 ${isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'}`}>Live Preview</h4>
-              <ChatWidget faqs={form.faqs.filter(f => f.question && f.answer)} primaryColor={form.primaryColor} welcomeMessage={form.welcomeMessage} chatWindowTitle={form.chatWindowTitle} fallbackMessage={form.fallbackMessage} launcherIcon={form.launcherIcon} inline />
-            </div>
-          </div>
-        )}
+              )}
 
-        {step === 4 && (
-          <div className="space-y-6">
-            <div className="text-center">
-              <h3 className={`text-lg font-semibold mb-2 ${isDark ? 'text-dark-text' : 'text-light-text'}`}>Preview Your Bot</h3>
-              <p className={`text-sm ${isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'}`}>Test your chatbot before publishing</p>
-            </div>
-            <div className="flex justify-center">
-              <ChatWidget faqs={form.faqs.filter(f => f.question && f.answer)} primaryColor={form.primaryColor} position={form.chatPosition} welcomeMessage={form.welcomeMessage} chatWindowTitle={form.chatWindowTitle} fallbackMessage={form.fallbackMessage} launcherIcon={form.launcherIcon} inline />
-            </div>
-          </div>
-        )}
-      </Card>
+              {step === 2 && (
+                <div className="space-y-6">
+                  <h3 className="text-sm font-black uppercase tracking-widest text-text-primary mb-2">Bot Personality</h3>
+                  <div className="space-y-2">
+                    <label className="block text-xs font-black uppercase tracking-widest text-text-secondary">Tone of Voice</label>
+                    <select value={form.tone} onChange={e => updateForm('tone', e.target.value)} className="w-full rounded-xl px-4 py-3 text-sm bg-surface-overlay border border-border text-text-primary focus:outline-none focus:ring-2 focus:ring-brand/50 transition-all appearance-none">
+                      {['Friendly','Formal','Professional','Sales-Focused','Casual'].map(t => <option key={t} value={t}>{t}</option>)}
+                    </select>
+                  </div>
+                  <Input label="Fallback Message" value={form.fallbackMessage} onChange={e => updateForm('fallbackMessage', e.target.value)} id="fallback" />
+                  <div className="space-y-2">
+                    <label className="block text-xs font-black uppercase tracking-widest text-text-secondary">Custom Personality Instructions</label>
+                    <textarea value={form.customInstructions} onChange={e => updateForm('customInstructions', e.target.value)} placeholder="e.g. Be very helpful and always sign off with 'Have a great day!'" rows={3} className="w-full rounded-xl px-4 py-3 text-sm bg-surface-overlay border border-border text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-brand/50 transition-all" />
+                  </div>
+                </div>
+              )}
 
-      {/* Navigation */}
-      <div className="flex items-center justify-between">
-        <Button variant="secondary" icon={ArrowLeft} onClick={prev} disabled={step === 0}>Back</Button>
-        <div className="flex gap-3">
-          {step === 4 && <Button variant="secondary" icon={Save} onClick={handleSaveDraft}>Save Draft</Button>}
+              {step === 3 && (
+                <div className="grid lg:grid-cols-2 gap-10">
+                  <div className="space-y-6">
+                    <h3 className="text-sm font-black uppercase tracking-widest text-text-primary">Appearance</h3>
+                    <div className="space-y-2">
+                      <label className="block text-xs font-black uppercase tracking-widest text-text-secondary">Brand Color</label>
+                      <div className="flex items-center gap-4 bg-surface-overlay p-3 rounded-xl border border-border">
+                        <input type="color" value={form.primaryColor} onChange={e => updateForm('primaryColor', e.target.value)} className="w-10 h-10 rounded-lg cursor-pointer border-0 bg-transparent" />
+                        <span className="text-sm font-mono font-bold tracking-wider">{form.primaryColor}</span>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="block text-xs font-black uppercase tracking-widest text-text-secondary">Chat Position</label>
+                      <div className="flex gap-2 p-1 bg-surface-overlay rounded-xl border border-border">
+                        {['Left','Right'].map(pos => (
+                          <button key={pos} onClick={() => updateForm('chatPosition', pos)} className={`flex-1 py-2.5 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${form.chatPosition === pos ? 'bg-brand text-white shadow-lg shadow-brand/20' : 'text-text-muted hover:text-text-primary'}`}>{pos}</button>
+                        ))}
+                      </div>
+                    </div>
+                    <Input label="Welcome Message" value={form.welcomeMessage} onChange={e => updateForm('welcomeMessage', e.target.value)} id="welcome" />
+                    <Input label="Window Title" value={form.chatWindowTitle} onChange={e => updateForm('chatWindowTitle', e.target.value)} id="title" />
+                  </div>
+                  <div className="relative">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-text-muted mb-4">Interface Preview</p>
+                    <div className="sticky top-0 bg-surface-overlay rounded-3xl p-2 border border-border shadow-2xl">
+                      <ChatWidget faqs={form.faqs.filter(f => f.question && f.answer)} primaryColor={form.primaryColor} welcomeMessage={form.welcomeMessage} chatWindowTitle={form.chatWindowTitle} fallbackMessage={form.fallbackMessage} launcherIcon={form.launcherIcon} inline />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {step === 4 && (
+                <div className="space-y-8 text-center">
+                  <div>
+                    <h3 className="text-xl font-black mb-2">Ready to Publish?</h3>
+                    <p className="text-sm text-text-secondary">Testing your bot now will save time later.</p>
+                  </div>
+                  <div className="flex justify-center">
+                    <div className="w-full max-w-sm bg-surface-overlay rounded-3xl p-2 border border-border shadow-2xl">
+                      <ChatWidget faqs={form.faqs.filter(f => f.question && f.answer)} primaryColor={form.primaryColor} position={form.chatPosition} welcomeMessage={form.welcomeMessage} chatWindowTitle={form.chatWindowTitle} fallbackMessage={form.fallbackMessage} launcherIcon={form.launcherIcon} inline />
+                    </div>
+                  </div>
+                </div>
+              )}
+            </Card>
+          </motion.div>
+        </AnimatePresence>
+      </div>
+
+      {/* Navigation Buttons */}
+      <div className="flex items-center justify-between mt-10">
+        <Button 
+          variant="outline" 
+          icon={ArrowLeft} 
+          onClick={prev} 
+          disabled={step === 0}
+          className="border-border hover:bg-surface-raised"
+        >
+          Back
+        </Button>
+        <div className="flex gap-4">
+          {step === 4 && <Button variant="secondary" icon={Save} onClick={handleSaveDraft} className="bg-surface-raised border border-border">Save as Draft</Button>}
           {step < 4 ? (
-            <Button onClick={next}>Next <ArrowRight className="w-4 h-4 ml-1" /></Button>
+            <Button onClick={next} className="shadow-lg shadow-brand/20 px-8">
+              Continue <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
           ) : (
-            <Button onClick={handlePublish} className="shadow-lg shadow-primary/25">Publish Bot 🚀</Button>
+            <Button onClick={handlePublish} className="shadow-glow-brand px-10">
+              Publish Chatbot 🚀
+            </Button>
           )}
         </div>
       </div>

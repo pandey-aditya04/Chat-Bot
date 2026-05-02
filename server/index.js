@@ -1,102 +1,62 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { connectDB, getDB } from './config/db.js';
-import { ObjectId } from 'mongodb';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
+import morgan from 'morgan';
+import logger from './utils/logger.js';
+import { errorHandler } from './middleware/errorHandler.js';
+
+// Route Imports
+import authRoutes from './routes/auth.js';
+import botRoutes from './routes/bot.js';
+import chatRoutes from './routes/chat.js';
+import logRoutes from './routes/log.js';
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-app.use(cors());
+// Logging
+app.use(morgan('dev'));
+
+// Security Middleware
+app.use(helmet());
+app.use(cors({ 
+  origin: process.env.ALLOWED_ORIGIN || 'http://localhost:5173', 
+  credentials: true 
+}));
+
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  message: { message: 'Too many requests from this IP, please try again after 15 minutes' }
+});
+
+// Middleware
 app.use(express.json());
+app.use('/api/', limiter);
 
 // Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/bots', botRoutes);
+app.use('/api/public/bots', chatRoutes);
+app.use('/api/logs', logRoutes);
+
+// Health Check
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok' });
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// Bots API
-app.get('/api/bots', async (req, res) => {
-  try {
-    const db = getDB();
-    const bots = await db.collection('bots').find({}).toArray();
-    res.json(bots);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-});
+// Error Handling
+app.use(errorHandler);
 
-app.post('/api/bots', async (req, res) => {
-  try {
-    const db = getDB();
-    const botData = {
-      ...req.body,
-      created: new Date().toISOString().split('T')[0],
-      faqCount: req.body.faqs?.length || 0,
-      conversations: 0
-    };
-    const result = await db.collection('bots').insertOne(botData);
-    res.status(201).json({ ...botData, _id: result.insertedId });
-  } catch (error) {
-    res.status(400).json({ message: error.message });
-  }
-});
-
-app.get('/api/bots/:id', async (req, res) => {
-  try {
-    const db = getDB();
-    const bot = await db.collection('bots').findOne({ _id: new ObjectId(req.params.id) });
-    if (!bot) return res.status(404).json({ message: 'Bot not found' });
-    res.json(bot);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-});
-
-app.put('/api/bots/:id', async (req, res) => {
-  try {
-    const db = getDB();
-    const { _id, ...updateData } = req.body;
-    updateData.faqCount = updateData.faqs?.length || 0;
-    const result = await db.collection('bots').findOneAndUpdate(
-      { _id: new ObjectId(req.params.id) },
-      { $set: updateData },
-      { returnDocument: 'after' }
-    );
-    if (!result) return res.status(404).json({ message: 'Bot not found' });
-    res.json(result);
-  } catch (error) {
-    res.status(400).json({ message: error.message });
-  }
-});
-
-app.delete('/api/bots/:id', async (req, res) => {
-  try {
-    const db = getDB();
-    const result = await db.collection('bots').deleteOne({ _id: new ObjectId(req.params.id) });
-    if (result.deletedCount === 0) return res.status(404).json({ message: 'Bot not found' });
-    res.json({ message: 'Bot deleted' });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-});
-
-// Logs API
-app.get('/api/logs', async (req, res) => {
-  try {
-    const db = getDB();
-    const logs = await db.collection('logs').find({}).sort({ timestamp: -1 }).toArray();
-    res.json(logs);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-});
-
-// Connect to DB and Start Server
-connectDB().then(() => {
+// Start Server
+if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
   app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+    logger.info(`Server is running on port ${PORT}`);
   });
-});
+}
+
+export default app;

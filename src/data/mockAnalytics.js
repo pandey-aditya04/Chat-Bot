@@ -46,8 +46,8 @@ export const topQuestions = [
 ];
 
 export const analyticsStats = {
-  totalMessages: 2847,
-  uniqueConversations: 611,
-  avgMatchRate: 68,
-  mostActiveDay: 'Tuesday',
+  totalMessages: 0,
+  uniqueConversations: 0,
+  avgMatchRate: 0,
+  mostActiveDay: 'None',
 };

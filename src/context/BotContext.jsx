@@ -1,21 +1,29 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+import { useAuth } from './AuthContext';
+import { botAPI } from '../lib/api';
 
 const BotContext = createContext();
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 export const BotProvider = ({ children }) => {
+  const { isAuthenticated } = useAuth();
   const [bots, setBots] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchBots();
-  }, []);
+    if (isAuthenticated) {
+      fetchBots();
+    } else {
+      setBots([]);
+      setLoading(false);
+    }
+  }, [isAuthenticated]);
 
   const fetchBots = async () => {
+    setLoading(true);
     try {
-      const response = await fetch(`${API_URL}/bots`);
-      const data = await response.json();
-      setBots(data.map(bot => ({ ...bot, id: bot._id })));
+      const { data } = await botAPI.getAll();
+      // Supabase returns 'id', so no mapping from '_id' is needed
+      setBots(data);
     } catch (error) {
       console.error('Error fetching bots:', error);
     } finally {
@@ -23,42 +31,35 @@ export const BotProvider = ({ children }) => {
     }
   };
 
-  const addBot = async (bot) => {
+  const addBot = async (botData) => {
     try {
-      const response = await fetch(`${API_URL}/bots`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(bot),
-      });
-      const newBot = await response.json();
-      const mappedBot = { ...newBot, id: newBot._id };
-      setBots(prev => [mappedBot, ...prev]);
-      return mappedBot;
+      const { data } = await botAPI.create(botData);
+      setBots(prev => [data, ...prev]);
+      return data;
     } catch (error) {
       console.error('Error adding bot:', error);
+      throw error;
     }
   };
 
   const updateBot = async (id, updates) => {
     try {
-      const response = await fetch(`${API_URL}/bots/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updates),
-      });
-      const updatedBot = await response.json();
-      setBots(prev => prev.map(b => b.id === id ? { ...updatedBot, id: updatedBot._id } : b));
+      const { data } = await botAPI.update(id, updates);
+      setBots(prev => prev.map(b => b.id === id ? data : b));
+      return data;
     } catch (error) {
       console.error('Error updating bot:', error);
+      throw error;
     }
   };
 
   const deleteBot = async (id) => {
     try {
-      await fetch(`${API_URL}/bots/${id}`, { method: 'DELETE' });
+      await botAPI.delete(id);
       setBots(prev => prev.filter(b => b.id !== id));
     } catch (error) {
       console.error('Error deleting bot:', error);
+      throw error;
     }
   };
 
@@ -67,12 +68,21 @@ export const BotProvider = ({ children }) => {
   const getBotStats = () => ({
     totalBots: bots.length,
     activeBots: bots.filter(b => b.status === 'Active').length,
-    totalConversations: bots.reduce((sum, b) => sum + (b.conversations || 0), 0),
-    totalFaqs: bots.reduce((sum, b) => sum + (b.faqCount || b.faqs?.length || 0), 0),
+    totalConversations: bots.reduce((sum, b) => sum + (b.conversations_count || 0), 0),
+    totalFaqs: bots.reduce((sum, b) => sum + (b.faqs?.length || 0), 0),
   });
 
   return (
-    <BotContext.Provider value={{ bots, loading, addBot, updateBot, deleteBot, getBot, getBotStats }}>
+    <BotContext.Provider value={{ 
+      bots, 
+      loading, 
+      addBot, 
+      updateBot, 
+      deleteBot, 
+      getBot, 
+      getBotStats,
+      refreshBots: fetchBots 
+    }}>
       {children}
     </BotContext.Provider>
   );
