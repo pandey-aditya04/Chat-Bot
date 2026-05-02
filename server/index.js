@@ -33,7 +33,10 @@ app.use(morgan('dev'));
 // Security Middleware
 app.use(helmet());
 app.use(cors({ 
-  origin: process.env.ALLOWED_ORIGIN || 'http://localhost:5173', 
+  origin: [
+    'https://chat-bottt-dusky.vercel.app',
+    'http://localhost:5173'
+  ],
   credentials: true 
 }));
 
