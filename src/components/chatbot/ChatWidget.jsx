@@ -3,7 +3,7 @@ import { MessageCircle, X, Send, Bot, Minus, Loader2 } from 'lucide-react';
 import ChatMessage from './ChatMessage';
 import TypingIndicator from './TypingIndicator';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL || 'https://chatbotserver-4sqr.onrender.com/api';
 
 const ChatWidget = ({
   botId,

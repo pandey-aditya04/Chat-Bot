@@ -9,7 +9,7 @@ import { useToast } from '../../hooks/useToast';
 import { useAuth } from '../../context/AuthContext';
 import FadeIn from '../../components/ui/FadeIn';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL || 'https://chatbotserver-4sqr.onrender.com/api';
 
 const ChatLogs = () => {
   const { isDark } = useTheme();
