@@ -9,7 +9,10 @@ const dbName = process.env.DB_NAME || 'chatbot_builder';
 
 const createUsers = async () => {
   try {
-    await mongoose.connect(`${url}/${dbName}`);
+    const connectionString = (url.includes('mongodb+srv') || url.split('/').length > 3) 
+      ? url 
+      : `${url}/${dbName}`;
+    await mongoose.connect(connectionString);
     console.log('Connected to MongoDB...');
 
     // Delete existing admin/demo if they exist to refresh passwords

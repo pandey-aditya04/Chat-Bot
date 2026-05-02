@@ -10,7 +10,12 @@ export const connectDB = async () => {
   if (mongoose.connection.readyState >= 1) return mongoose.connection.db;
 
   try {
-    const conn = await mongoose.connect(`${url}/${dbName}`, {
+    // If the URI already contains a database path or is an Atlas SRV string, use it as is
+    const connectionString = (url.includes('mongodb+srv') || url.split('/').length > 3) 
+      ? url 
+      : `${url}/${dbName}`;
+
+    const conn = await mongoose.connect(connectionString, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
     });

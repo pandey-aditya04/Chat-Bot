@@ -8,7 +8,8 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "seed": "node server/seed.js"
+    "seed": "node server/seed.js",
+    "setup": "node server/create-users.js"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",
@@ -16,6 +17,7 @@
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.6.1",
     "@tailwindcss/typography": "^0.5.19",
+    "bcryptjs": "^3.0.2",
     "clsx": "^2.1.1",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
@@ -24,6 +26,7 @@
     "geist": "^1.7.0",
     "gray-matter": "^4.0.3",
     "gsap": "^3.15.0",
+    "jsonwebtoken": "^9.0.2",
     "lenis": "^1.3.23",
     "lucide-react": "^1.14.0",
     "mongodb": "^7.2.0",
