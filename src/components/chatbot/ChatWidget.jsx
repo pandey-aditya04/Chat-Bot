@@ -26,7 +26,12 @@ const ChatWidget = ({
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
+  const isFirstRender = useRef(true);
   useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
 
@@ -37,7 +42,15 @@ const ChatWidget = ({
   }, [isOpen]);
 
   const matchFAQ = (query) => {
-    const words = query.toLowerCase().replace(/[?!.,]/g, '').split(/\s+/).filter(w => w.length > 2);
+    const lowerQuery = query.toLowerCase().trim();
+    
+    // Check for basic greetings first
+    const greetings = ['hi', 'hello', 'hey', 'how are you', 'howdy', 'hola'];
+    if (greetings.some(g => lowerQuery.includes(g))) {
+      return { answer: "Hi there! 👋 I'm doing great, thanks for asking! How can I help you today?" };
+    }
+
+    const words = lowerQuery.replace(/[?!.,]/g, '').split(/\s+/).filter(w => w.length >= 2);
     let bestMatch = null;
     let bestScore = 0;
 
