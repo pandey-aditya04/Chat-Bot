@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChatBot Widget Test</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: #0a0a0f;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            text-align: center;
+        }
+        .container {
+            max-width: 600px;
+            padding: 40px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+        h1 { font-size: 2.5rem; margin-bottom: 1rem; background: linear-gradient(to right, #7c3aed, #3b82f6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        p { color: #94a3b8; line-height: 1.6; }
+        .instructions {
+            margin-top: 2rem;
+            text-align: left;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 20px;
+            border-radius: 12px;
+            font-size: 0.9rem;
+        }
+        code { color: #fb7185; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Widget Test Page</h1>
+        <p>This is a sample page to test your embeddable chatbot widget.</p>
+        
+        <div class="instructions">
+            <strong>How to use:</strong>
+            <ol>
+                <li>Create a bot in your <a href="https://chat-bottt-dusky.vercel.app/dashboard" style="color: #60a5fa;">Dashboard</a>.</li>
+                <li>Copy the <strong>Bot ID</strong> from the bot settings.</li>
+                <li>Edit this file and replace <code>YOUR_BOT_ID</code> in the script tag below.</li>
+            </ol>
+        </div>
+    </div>
+
+    <!-- CHATBOT WIDGET EMBED CODE -->
+    <script 
+        src="./public/widget.js" 
+        data-bot-id="YOUR_BOT_ID"
+        data-api-url="https://chatbotserver-4sqr.onrender.com/api"
+    ></script>
+</body>
+</html>
