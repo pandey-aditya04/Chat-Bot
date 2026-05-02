@@ -1,13 +1,14 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { supabase } from '../config/supabase.js';
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
 export const interact = async (req, res, next) => {
   try {
     const { query, sessionId } = req.body;
     const botId = req.params.id;
+
+    // Ensure Gemini is initialized with the API key from process.env
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
     
     // 1. Validation
     if (!query || query.length > 1000) {
