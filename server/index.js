@@ -15,6 +15,15 @@ import logRoutes from './routes/log.js';
 
 dotenv.config();
 
+// Safety check — log what we have
+console.log('ENV CHECK:', {
+  port: process.env.PORT,
+  nodeEnv: process.env.NODE_ENV,
+  hasSupabaseUrl: !!process.env.SUPABASE_URL,
+  hasSupabaseKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+  hasGemini: !!process.env.GEMINI_API_KEY
+});
+
 const app = express();
 const PORT = process.env.PORT || 5000;
 
@@ -53,7 +62,9 @@ app.get('/api/health', (req, res) => {
 app.use(errorHandler);
 
 // Start Server
-if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
+if (process.env.VERCEL) {
+  logger.info('Running in Vercel environment');
+} else {
   app.listen(PORT, () => {
     logger.info(`Server is running on port ${PORT}`);
   });
