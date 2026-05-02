@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Menu, Moon, Sun, Bell, ChevronDown, User, Settings, LogOut } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const Navbar = ({ title, onMenuClick }) => {
   const { isDark, toggleTheme } = useTheme();
@@ -34,27 +35,26 @@ const Navbar = ({ title, onMenuClick }) => {
   ];
 
   return (
-    <header className={`h-20 flex items-center justify-between px-6 md:px-8 ${
-      isDark ? 'bg-dark-surface border-b border-dark-border' : 'bg-light-surface border-b border-light-border'
+    <header className={`h-20 flex items-center justify-between px-6 md:px-10 sticky top-0 z-30 backdrop-blur-xl border-b border-border ${
+      isDark ? 'bg-surface/80' : 'bg-surface/80'
     }`}>
-      <div className="flex items-center gap-3">
-        <button onClick={onMenuClick} className={`lg:hidden p-2 rounded-xl ${
-          isDark ? 'hover:bg-dark-surface-2' : 'hover:bg-light-surface-2'
-        }`}>
-          <Menu className={`w-5 h-5 ${isDark ? 'text-dark-text' : 'text-light-text'}`} />
+      <div className="flex items-center gap-4">
+        <button 
+          onClick={onMenuClick} 
+          className="lg:hidden p-2.5 rounded-xl hover:bg-surface-overlay border border-border text-text-primary transition-all"
+        >
+          <Menu className="w-5 h-5" />
         </button>
-        <h1 className={`text-lg md:text-xl font-semibold ${isDark ? 'text-dark-text' : 'text-light-text'}`}>
+        <h1 className="text-xl font-black tracking-tight text-text-primary">
           {title}
         </h1>
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-3">
         {/* Dark Mode Toggle */}
         <button
           onClick={toggleTheme}
-          className={`p-2.5 rounded-xl transition-colors ${
-            isDark ? 'hover:bg-dark-surface-2 text-dark-text-secondary hover:text-dark-text' : 'hover:bg-light-surface-2 text-light-text-secondary hover:text-light-text'
-          }`}
+          className="p-2.5 rounded-xl transition-all border border-border bg-surface-raised hover:bg-surface-overlay text-text-secondary hover:text-text-primary"
         >
           {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
         </button>
@@ -63,96 +63,96 @@ const Navbar = ({ title, onMenuClick }) => {
         <div className="relative" ref={notifRef}>
           <button
             onClick={() => setShowNotifications(!showNotifications)}
-            className={`p-2.5 rounded-xl transition-colors relative ${
-              isDark ? 'hover:bg-dark-surface-2 text-dark-text-secondary hover:text-dark-text' : 'hover:bg-light-surface-2 text-light-text-secondary hover:text-light-text'
-            }`}
+            className="p-2.5 rounded-xl transition-all border border-border bg-surface-raised hover:bg-surface-overlay text-text-secondary hover:text-text-primary relative"
           >
             <Bell className="w-5 h-5" />
-            <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-danger rounded-full border-2 border-dark-surface" />
+            <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-brand rounded-full border-2 border-surface" />
           </button>
 
-          {showNotifications && (
-            <div className={`absolute right-0 mt-2 w-80 rounded-xl shadow-xl animate-slide-down ${
-              isDark ? 'bg-dark-surface border border-dark-border' : 'bg-light-surface border border-light-border'
-            }`}>
-              <div className="p-4 border-b border-dark-border/50">
-                <h3 className={`font-semibold text-sm ${isDark ? 'text-dark-text' : 'text-light-text'}`}>
-                  Notifications
-                </h3>
-              </div>
-              <div className="max-h-64 overflow-y-auto">
-                {notifications.map(n => (
-                  <div key={n.id} className={`px-4 py-3 flex gap-3 ${
-                    isDark ? 'hover:bg-dark-surface-2' : 'hover:bg-light-surface-2'
-                  } transition-colors cursor-pointer`}>
-                    <div className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${n.read ? 'bg-transparent' : 'bg-primary'}`} />
-                    <div>
-                      <p className={`text-sm ${isDark ? 'text-dark-text' : 'text-light-text'}`}>{n.text}</p>
-                      <p className={`text-xs mt-0.5 ${isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'}`}>{n.time}</p>
+          <AnimatePresence>
+            {showNotifications && (
+              <motion.div 
+                initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                className="absolute right-0 mt-3 w-80 rounded-2xl shadow-2xl bg-surface-raised border border-border overflow-hidden"
+              >
+                <div className="p-5 border-b border-border bg-surface-overlay/50">
+                  <h3 className="font-black text-xs uppercase tracking-widest text-text-primary">
+                    Notifications
+                  </h3>
+                </div>
+                <div className="max-h-80 overflow-y-auto divide-y divide-border">
+                  {notifications.map(n => (
+                    <div key={n.id} className="p-5 flex gap-4 hover:bg-surface-overlay transition-colors cursor-pointer group">
+                      <div className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${n.read ? 'bg-transparent' : 'bg-brand shadow-glow-brand'}`} />
+                      <div>
+                        <p className="text-sm font-medium leading-snug group-hover:text-brand transition-colors">{n.text}</p>
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-text-muted mt-2">{n.time}</p>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* User Menu */}
         <div className="relative" ref={dropdownRef}>
           <button
             onClick={() => setShowDropdown(!showDropdown)}
-            className={`flex items-center gap-2 p-1.5 pr-3 rounded-xl transition-colors ${
-              isDark ? 'hover:bg-dark-surface-2' : 'hover:bg-light-surface-2'
-            }`}
+            className="flex items-center gap-3 p-1.5 pr-4 rounded-xl transition-all border border-border bg-surface-raised hover:bg-surface-overlay group"
           >
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-              <span className="text-white text-sm font-semibold">
+            <div className="w-9 h-9 rounded-full bg-brand flex items-center justify-center shadow-glow-brand">
+              <span className="text-white text-sm font-black">
                 {user?.name?.charAt(0)?.toUpperCase() || 'U'}
               </span>
             </div>
-            <ChevronDown className={`w-4 h-4 ${isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'}`} />
+            <div className="hidden sm:block text-left">
+              <p className="text-xs font-black truncate max-w-[100px] leading-none mb-1">{user?.name}</p>
+              <p className="text-[10px] font-bold text-text-muted uppercase tracking-wider leading-none">Account</p>
+            </div>
+            <ChevronDown className="w-4 h-4 text-text-muted group-hover:text-text-primary transition-colors" />
           </button>
 
-          {showDropdown && (
-            <div className={`absolute right-0 mt-2 w-56 rounded-xl shadow-xl animate-slide-down ${
-              isDark ? 'bg-dark-surface border border-dark-border' : 'bg-light-surface border border-light-border'
-            }`}>
-              <div className="p-3 border-b border-dark-border/50">
-                <p className={`text-sm font-medium ${isDark ? 'text-dark-text' : 'text-light-text'}`}>
-                  {user?.name}
-                </p>
-                <p className={`text-xs ${isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'}`}>
-                  {user?.email}
-                </p>
-              </div>
-              <div className="py-1">
-                <button
-                  onClick={() => { navigate('/dashboard/settings'); setShowDropdown(false); }}
-                  className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors ${
-                    isDark ? 'text-dark-text-secondary hover:text-dark-text hover:bg-dark-surface-2' : 'text-light-text-secondary hover:text-light-text hover:bg-light-surface-2'
-                  }`}
-                >
-                  <User className="w-4 h-4" /> Profile
-                </button>
-                <button
-                  onClick={() => { navigate('/dashboard/settings'); setShowDropdown(false); }}
-                  className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors ${
-                    isDark ? 'text-dark-text-secondary hover:text-dark-text hover:bg-dark-surface-2' : 'text-light-text-secondary hover:text-light-text hover:bg-light-surface-2'
-                  }`}
-                >
-                  <Settings className="w-4 h-4" /> Settings
-                </button>
-              </div>
-              <div className={`border-t ${isDark ? 'border-dark-border' : 'border-light-border'}`}>
-                <button
-                  onClick={handleLogout}
-                  className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-danger hover:bg-danger/10 transition-colors rounded-b-xl"
-                >
-                  <LogOut className="w-4 h-4" /> Logout
-                </button>
-              </div>
-            </div>
-          )}
+          <AnimatePresence>
+            {showDropdown && (
+              <motion.div 
+                initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                className="absolute right-0 mt-3 w-64 rounded-2xl shadow-2xl bg-surface-raised border border-border overflow-hidden"
+              >
+                <div className="p-5 border-b border-border bg-surface-overlay/50">
+                  <p className="text-sm font-black truncate">{user?.name}</p>
+                  <p className="text-xs font-medium text-text-muted truncate mt-1">{user?.email}</p>
+                </div>
+                <div className="p-2">
+                  <button
+                    onClick={() => { navigate('/dashboard/settings'); setShowDropdown(false); }}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl hover:bg-surface-overlay text-text-secondary hover:text-text-primary transition-all"
+                  >
+                    <User className="w-4.5 h-4.5" /> Profile Settings
+                  </button>
+                  <button
+                    onClick={() => { navigate('/dashboard/settings'); setShowDropdown(false); }}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl hover:bg-surface-overlay text-text-secondary hover:text-text-primary transition-all"
+                  >
+                    <Settings className="w-4.5 h-4.5" /> Billing & Usage
+                  </button>
+                </div>
+                <div className="p-2 bg-surface-overlay/50 border-t border-border">
+                  <button
+                    onClick={handleLogout}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-danger hover:bg-danger/10 transition-all rounded-xl"
+                  >
+                    <LogOut className="w-4.5 h-4.5" /> Sign Out
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
     </header>

@@ -22,11 +22,11 @@ const DashboardLayout = () => {
     (location.pathname.includes('/embed') ? 'Embed Code' : 'Dashboard');
 
   return (
-    <div className={`min-h-screen ${isDark ? 'bg-dark-bg' : 'bg-light-bg'}`}>
+    <div className={`min-h-screen ${isDark ? 'bg-surface text-text-primary' : 'light bg-surface text-text-primary'}`}>
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <div className="lg:ml-64 transition-all duration-300">
         <Navbar title={title} onMenuClick={() => setSidebarOpen(true)} />
-        <main className="max-w-6xl mx-auto px-6 py-20 md:px-12">
+        <main className="max-w-6xl mx-auto px-6 py-8 md:px-12 md:py-12">
           <Outlet />
         </main>
       </div>
