@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
+import { useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import LandingPage from '../pages/public/LandingPage';
 import LoginPage from '../pages/public/LoginPage';
@@ -14,12 +15,21 @@ import ChatLogs from '../pages/dashboard/ChatLogs';
 import Settings from '../pages/dashboard/Settings';
 import ProtectedRoute from './ProtectedRoute';
 
+// Scroll to top on every route change
+const ScrollToTop = () => {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+  return null;
+};
+
 const PageWrapper = ({ children }) => (
   <motion.div
-    initial={{ opacity: 0, y: 16, filter: 'blur(4px)' }}
-    animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-    exit={{ opacity: 0, y: -8, filter: 'blur(2px)' }}
-    transition={{ duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
+    initial={{ opacity: 0, filter: 'blur(4px)' }}
+    animate={{ opacity: 1, filter: 'blur(0px)' }}
+    exit={{ opacity: 0, filter: 'blur(2px)' }}
+    transition={{ duration: 0.3, ease: 'easeOut' }}
   >
     {children}
   </motion.div>
@@ -27,7 +37,6 @@ const PageWrapper = ({ children }) => (
 
 const AnimatedRoutes = () => {
   const location = useLocation();
-  const isDashboard = location.pathname.startsWith('/dashboard');
 
   return (
     <AnimatePresence mode="wait">
@@ -38,7 +47,7 @@ const AnimatedRoutes = () => {
         <Route path="/signup" element={<PageWrapper><SignupPage /></PageWrapper>} />
         <Route path="/pricing" element={<PageWrapper><PricingPage /></PageWrapper>} />
 
-        {/* Dashboard Routes - We wrap the entire layout for top-level entry, but sub-pages don't need full wrappers to avoid double animation */}
+        {/* Dashboard Routes */}
         <Route
           path="/dashboard"
           element={
@@ -63,6 +72,7 @@ const AnimatedRoutes = () => {
 const AppRouter = () => {
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <AnimatedRoutes />
     </BrowserRouter>
   );

@@ -115,23 +115,21 @@
   background: var(--color-text-muted);
 }
 
-/* Lenis Smooth Scroll Fixes */
-html.lenis {
-  height: auto;
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
 }
 
-.lenis.lenis-smooth {
-  scroll-behavior: auto;
+::-webkit-scrollbar-track {
+  background: var(--color-surface);
 }
 
-.lenis.lenis-smooth [data-lenis-prevent] {
-  overscroll-behavior: contain;
+::-webkit-scrollbar-thumb {
+  background: var(--color-surface-overlay);
+  border: 3px solid var(--color-surface);
+  border-radius: 10px;
 }
 
-.lenis.lenis-stopped {
-  overflow: hidden;
-}
-
-.lenis.lenis-scrolling iframe {
-  pointer-events: none;
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-muted);
 }

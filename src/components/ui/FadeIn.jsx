@@ -3,36 +3,36 @@ import { motion } from 'framer-motion';
 const FadeIn = ({ 
   children, 
   delay = 0, 
-  direction = 'up', 
-  fullWidth = false,
-  className = ''
+  direction = 'none', 
+  duration = 0.6,
+  className = "" 
 }) => {
   const directions = {
-    up: { y: 24, x: 0 },
-    down: { y: -24, x: 0 },
-    left: { x: -24, y: 0 },
-    right: { x: 24, y: 0 },
+    up: { y: 20 },
+    down: { y: -20 },
+    left: { x: 20 },
+    right: { x: -20 },
     none: { x: 0, y: 0 }
   };
 
   return (
     <motion.div
       initial={{ 
-        opacity: 0, 
-        ...directions[direction] 
+        opacity: 0,
+        ...directions[direction]
       }}
       whileInView={{ 
-        opacity: 1, 
-        y: 0, 
-        x: 0 
+        opacity: 1,
+        x: 0,
+        y: 0
       }}
-      viewport={{ once: true, margin: '-80px' }}
+      viewport={{ once: true, margin: "-50px" }}
       transition={{ 
-        duration: 0.55, 
-        delay, 
-        ease: [0.22, 1, 0.36, 1] 
+        duration: duration,
+        delay: delay,
+        ease: [0.21, 0.47, 0.32, 0.98]
       }}
-      className={`${fullWidth ? 'w-full' : ''} ${className}`}
+      className={className}
     >
       {children}
     </motion.div>
