@@ -5,6 +5,7 @@ import LandingPage from '../pages/public/LandingPage';
 import LoginPage from '../pages/public/LoginPage';
 import SignupPage from '../pages/public/SignupPage';
 import PricingPage from '../pages/public/PricingPage';
+import BotEmbedView from '../pages/public/BotEmbedView';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import DashboardHome from '../pages/dashboard/DashboardHome';
 import BotList from '../pages/dashboard/BotList';
@@ -46,6 +47,7 @@ const AnimatedRoutes = () => {
         <Route path="/login" element={<PageWrapper><LoginPage /></PageWrapper>} />
         <Route path="/signup" element={<PageWrapper><SignupPage /></PageWrapper>} />
         <Route path="/pricing" element={<PageWrapper><PricingPage /></PageWrapper>} />
+        <Route path="/embed/:botId" element={<BotEmbedView />} />
 
         {/* Dashboard Routes */}
         <Route

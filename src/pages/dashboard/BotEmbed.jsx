@@ -155,13 +155,7 @@ const BotEmbed = () => {
 
       {showWidget && (
         <ChatWidget
-          faqs={bot.faqs || []}
-          primaryColor={bot.primaryColor}
-          position={bot.chatPosition}
-          welcomeMessage={bot.welcomeMessage}
-          chatWindowTitle={bot.chatWindowTitle}
-          fallbackMessage={bot.fallbackMessage}
-          launcherIcon={bot.launcherIcon}
+          botId={bot.id}
           isOpen={true}
           onToggle={() => setShowWidget(false)}
         />

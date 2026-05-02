@@ -129,6 +129,82 @@ app.delete('/api/bots/:id', authenticate, async (req, res) => {
   }
 });
 
+// --- Public API Routes (For Widget Interaction) ---
+
+// Get public bot configuration
+app.get('/api/public/bots/:id', async (req, res) => {
+  try {
+    const bot = await Bot.findById(req.params.id).select('name primaryColor chatWindowTitle welcomeMessage fallbackMessage faqs status position launcherIcon');
+    if (!bot) return res.status(404).json({ message: 'Bot not found' });
+    if (bot.status === 'Paused') return res.status(403).json({ message: 'Bot is currently inactive' });
+    
+    res.json(bot);
+  } catch (error) {
+    res.status(500).json({ message: 'Invalid Bot ID' });
+  }
+});
+
+// Interact with bot
+app.post('/api/public/bots/:id/interact', async (req, res) => {
+  try {
+    const { query, sessionId } = req.body;
+    const bot = await Bot.findById(req.params.id);
+    if (!bot) return res.status(404).json({ message: 'Bot not found' });
+
+    // Simple FAQ Matching Logic (Server-side)
+    const matchFAQ = (text, faqs) => {
+      const lowerQuery = text.toLowerCase().trim();
+      const words = lowerQuery.replace(/[?!.,]/g, '').split(/\s+/).filter(w => w.length >= 2);
+      
+      let bestMatch = null;
+      let bestScore = 0;
+
+      for (const faq of faqs) {
+        const faqWords = faq.question.toLowerCase().replace(/[?!.,]/g, '').split(/\s+/);
+        let score = 0;
+        for (const word of words) {
+          if (faqWords.some(fw => fw.includes(word) || word.includes(fw))) score++;
+        }
+        if (score > bestScore) {
+          bestScore = score;
+          bestMatch = faq;
+        }
+      }
+      return bestScore >= 1 ? bestMatch : null;
+    };
+
+    const match = matchFAQ(query, bot.faqs);
+    const responseText = match ? match.answer : (bot.fallbackMessage || "I'm not sure about that.");
+
+    // Update Conversation Count on Bot
+    await Bot.findByIdAndUpdate(req.params.id, { $inc: { conversations: 1 } });
+
+    // Log the interaction
+    let log = await Log.findOne({ sessionId, botId: bot._id });
+    if (!log) {
+      log = new Log({ 
+        botId: bot._id, 
+        botName: bot.name, 
+        sessionId, 
+        messages: [] 
+      });
+    }
+
+    log.messages.push({ role: 'user', text: query, time: new Date().toLocaleTimeString() });
+    log.messages.push({ role: 'bot', text: responseText, time: new Date().toLocaleTimeString(), matched: !!match });
+    log.messageCount = log.messages.length;
+    await log.save();
+
+    res.json({ 
+      text: responseText, 
+      matched: !!match,
+      time: new Date().toLocaleTimeString()
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // Logs API (Multitenant)
 app.get('/api/logs', authenticate, async (req, res) => {
   try {
