@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { Bot, MessageSquare, Activity, Zap, Plus, ArrowRight, Sparkles } from 'lucide-react';
+import { Bot, MessageSquare, Activity, Zap, Plus, ArrowRight, Sparkles, Check } from 'lucide-react';
 import StatsCard from '../../components/analytics/StatsCard';
 import Card from '../../components/ui/Card';
 import Badge from '../../components/ui/Badge';
@@ -45,16 +45,44 @@ const DashboardHome = () => {
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <FadeIn delay={0.2} direction="up">
-          <StatsCard title="Total Bots" value={stats.totalBots} icon={Bot} color="primary" trend="up" trendValue="2 new" />
+          <StatsCard 
+            title="Total Bots" 
+            value={stats.totalBots} 
+            icon={Bot} 
+            color="primary" 
+            trend={hasBots ? "up" : null} 
+            trendValue={hasBots ? "Active" : ""} 
+          />
         </FadeIn>
         <FadeIn delay={0.25} direction="up">
-          <StatsCard title="Total Conversations" value={stats.totalConversations} icon={MessageSquare} color="accent" trend="up" trendValue="+12%" />
+          <StatsCard 
+            title="Total Conversations" 
+            value={stats.totalConversations} 
+            icon={MessageSquare} 
+            color="accent" 
+            trend={hasBots && stats.totalConversations > 0 ? "up" : null} 
+            trendValue={hasBots && stats.totalConversations > 0 ? "+0%" : ""} 
+          />
         </FadeIn>
         <FadeIn delay={0.3} direction="up">
-          <StatsCard title="Messages This Month" value={2847} icon={Activity} color="success" trend="up" trendValue="+8%" />
+          <StatsCard 
+            title="Total FAQs" 
+            value={stats.totalFaqs} 
+            icon={Activity} 
+            color="success" 
+            trend={hasBots ? "stable" : null} 
+            trendValue={hasBots ? "Curated" : ""} 
+          />
         </FadeIn>
         <FadeIn delay={0.35} direction="up">
-          <StatsCard title="Active Bots" value={stats.activeBots} icon={Zap} color="warning" trend="stable" trendValue="No change" />
+          <StatsCard 
+            title="Active Bots" 
+            value={stats.activeBots} 
+            icon={Zap} 
+            color="warning" 
+            trend={hasBots ? "stable" : null} 
+            trendValue={hasBots ? "Online" : ""} 
+          />
         </FadeIn>
       </div>
 
@@ -98,7 +126,7 @@ const DashboardHome = () => {
                             <Badge variant={statusVariant[bot.status]}>{bot.status}</Badge>
                           </td>
                           <td className="px-6 py-5 text-xs font-medium text-text-secondary">
-                            {formatDate(bot.created)}
+                            {formatDate(bot.created_at || bot.created)}
                           </td>
                           <td className="px-6 py-5">
                             <button 

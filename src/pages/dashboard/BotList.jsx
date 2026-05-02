@@ -76,7 +76,7 @@ const BotList = () => {
                   <MessageSquare className={`w-3.5 h-3.5 ${isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'}`} />
                   <span className={`text-xs ${isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'}`}>{bot.faqCount || bot.faqs?.length || 0} FAQs</span>
                 </div>
-                <span className={`text-xs ${isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'}`}>{formatDate(bot.created)}</span>
+                <span className={`text-xs ${isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'}`}>{formatDate(bot.created_at || bot.created)}</span>
               </div>
             </div>
             <div className={`flex border-t ${isDark ? 'border-dark-border' : 'border-light-border'}`}>

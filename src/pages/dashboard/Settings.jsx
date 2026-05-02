@@ -7,6 +7,7 @@ import Badge from '../../components/ui/Badge';
 import FadeIn from '../../components/ui/FadeIn';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
+import { useBots } from '../../context/BotContext';
 import { useToast } from '../../hooks/useToast';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -19,13 +20,16 @@ const tabs = [
 
 const Settings = () => {
   const { user, updateProfile } = useAuth();
+  const { bots, getBotStats } = useBots();
   const { isDark } = useTheme();
   const toast = useToast();
+  const stats = getBotStats();
+  
   const [activeTab, setActiveTab] = useState('profile');
   const [profile, setProfile] = useState({ 
     name: user?.name || '', 
     email: user?.email || '', 
-    timezone: user?.timezone || 'America/New_York' 
+    timezone: user?.timezone || 'UTC' 
   });
   const [security, setSecurity] = useState({ 
     currentPassword: '', 
@@ -52,6 +56,12 @@ const Settings = () => {
     toast.success('Security settings saved!');
     setSecurity({ ...security, currentPassword: '', newPassword: '', confirmPassword: '' });
   };
+
+  const billingStats = [
+    { label: 'Total Chatbots', used: stats.totalBots, total: 5, color: 'bg-brand' },
+    { label: 'Monthly Conversations', used: stats.totalConversations, total: 5000, color: 'bg-accent' },
+    { label: 'Knowledge Base entries', used: stats.totalFaqs, total: 999, color: 'bg-success' }
+  ];
 
   return (
     <div className="max-w-4xl mx-auto space-y-8 pb-20">
@@ -116,7 +126,7 @@ const Settings = () => {
                 <div>
                   <h4 className="text-xl font-black tracking-tight mb-1">{user?.name}</h4>
                   <p className="text-sm text-text-secondary mb-4">{user?.email}</p>
-                  <Badge variant="purple" className="px-4 py-1 font-black text-[10px] tracking-widest">{user?.role || 'Personal'} Plan</Badge>
+                  <Badge variant="purple" className="px-4 py-1 font-black text-[10px] tracking-widest">{user?.plan || 'Personal'} Plan</Badge>
                 </div>
               </div>
               
@@ -126,7 +136,7 @@ const Settings = () => {
                 <div className="space-y-2">
                   <label className="block text-xs font-black uppercase tracking-widest text-text-secondary">Timezone</label>
                   <select value={profile.timezone} onChange={e => setProfile(p => ({ ...p, timezone: e.target.value }))} className="w-full rounded-xl px-4 py-3 text-sm bg-surface-overlay border border-border text-text-primary focus:outline-none focus:ring-2 focus:ring-brand/50 transition-all appearance-none">
-                    {['America/New_York','America/Chicago','America/Denver','America/Los_Angeles','Europe/London','Europe/Paris','Asia/Tokyo'].map(tz => <option key={tz} value={tz}>{tz}</option>)}
+                    {['America/New_York','America/Chicago','America/Denver','America/Los_Angeles','Europe/London','Europe/Paris','Asia/Tokyo','Asia/Kolkata','UTC'].map(tz => <option key={tz} value={tz}>{tz}</option>)}
                   </select>
                 </div>
               </div>
@@ -174,11 +184,7 @@ const Settings = () => {
                   <Button variant="outline" className="border-brand text-brand hover:bg-brand hover:text-white transition-all shadow-lg shadow-brand/10">Upgrade Plan</Button>
                 </div>
                 <div className="space-y-6">
-                  {[
-                    { label: 'Total Chatbots', used: 3, total: 5, color: 'bg-brand' },
-                    { label: 'Monthly Messages', used: 2847, total: 5000, color: 'bg-accent' },
-                    { label: 'Knowledge Base entries', used: 31, total: 999, color: 'bg-success' }
-                  ].map((item, i) => (
+                  {billingStats.map((item, i) => (
                     <div key={i} className="group">
                       <div className="flex justify-between text-xs font-bold mb-2.5">
                         <span className="text-text-secondary uppercase tracking-widest">{item.label}</span>
