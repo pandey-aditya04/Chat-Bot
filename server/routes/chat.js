@@ -3,6 +3,7 @@ const router = express.Router();
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const { supabase } = require('../config/supabase');
 
+// POST /api/chat - Regular chat interaction
 router.post('/', async (req, res) => {
   try {
     const { botId, query, messages, sessionId } = req.body;
@@ -55,69 +56,97 @@ router.post('/', async (req, res) => {
     // Convert messages to Gemini history format if provided
     let history = [];
     if (messages && Array.isArray(messages)) {
-      history = messages.slice(0, -1).map(m => ({
+      history = messages.filter(m => m.role && (m.content || m.text)).slice(0, -1).map(m => ({
         role: m.role === 'assistant' || m.role === 'bot' ? 'model' : 'user',
         parts: [{ text: m.content || m.text }]
       }));
     }
 
     const chat = model.startChat({ history });
-    const userQuery = query || (messages && messages[messages.length - 1]?.content) || '';
+    const userQuery = query || (messages && messages[messages.length - 1]?.content) || (messages && messages[messages.length - 1]?.text) || '';
     
     if (!userQuery) return res.status(400).json({ error: 'Query is required' });
 
     const result = await chat.sendMessage(userQuery);
     const responseText = result.response.text();
 
-    // 5. Update Stats & Logs (Non-blocking or background)
     const timestamp = new Date().toLocaleTimeString();
     
-    // Log the interaction if sessionId is provided
+    // 5. Update Stats & Logs (Non-blocking)
     if (sessionId) {
-      // Find or create log entry for session
-      let { data: log } = await supabase
-        .from('logs')
-        .select('*')
-        .eq('session_id', sessionId)
-        .eq('bot_id', botId)
-        .maybeSingle();
-
-      if (!log) {
-        const { data: newLog } = await supabase
-          .from('logs')
-          .insert([{ bot_id: botId, bot_name: bot.name, session_id: sessionId }])
-          .select()
-          .single();
-        log = newLog;
-      }
-
-      if (log) {
-        await supabase.from('messages').insert([
-          { log_id: log.id, role: 'user', text: userQuery, time: timestamp },
-          { log_id: log.id, role: 'bot', text: responseText, time: timestamp }
-        ]);
-        
-        await supabase.from('logs').update({ 
-          message_count: (log.message_count || 0) + 2,
-          last_active: new Date()
-        }).eq('id', log.id).then();
-      }
+      (async () => {
+        try {
+          let { data: log } = await supabase.from('logs').select('*').eq('session_id', sessionId).eq('bot_id', botId).maybeSingle();
+          if (!log) {
+            const { data: newLog } = await supabase.from('logs').insert([{ bot_id: botId, bot_name: bot.name, session_id: sessionId }]).select().single();
+            log = newLog;
+          }
+          if (log) {
+            await supabase.from('messages').insert([
+              { log_id: log.id, role: 'user', text: userQuery, time: timestamp },
+              { log_id: log.id, role: 'bot', text: responseText, time: timestamp }
+            ]);
+            await supabase.from('logs').update({ message_count: (log.message_count || 0) + 2, last_active: new Date() }).eq('id', log.id);
+          }
+          await supabase.from('bots').update({ conversations_count: (bot.conversations_count || 0) + 1 }).eq('id', botId);
+        } catch (e) { console.error('Log update error:', e); }
+      })();
     }
 
-    // Update bot global stats
-    await supabase.from('bots').update({ 
-      conversations_count: (bot.conversations_count || 0) + 1 
-    }).eq('id', botId).then();
+    res.json({ reply: responseText, text: responseText, time: timestamp });
+
+  } catch (err) {
+    console.error('Chat error:', err);
+    res.status(500).json({ error: err.message || 'AI failed to respond. Please try again.' });
+  }
+});
+
+// POST /api/chat/demo - Demo chat interaction (no botId required)
+router.post('/demo', async (req, res) => {
+  try {
+    const { query, messages } = req.body;
+
+    const systemPrompt = `
+      You are ChatBot Builder Demo, a helpful AI assistant showcasing how our platform works.
+      Be friendly, professional, and slightly enthusiastic about ChatBot Builder.
+      Answer questions about chatbots and AI helpfully.
+    `;
+
+    if (!process.env.GEMINI_API_KEY) {
+      return res.status(500).json({ error: 'AI service not configured on server' });
+    }
+
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    const model = genAI.getGenerativeModel({ 
+      model: 'gemini-flash-latest',
+      systemInstruction: systemPrompt
+    });
+
+    let history = [];
+    if (messages && Array.isArray(messages)) {
+      history = messages.filter(m => m.role && (m.content || m.text)).slice(0, -1).map(m => ({
+        role: m.role === 'assistant' || m.role === 'bot' ? 'model' : 'user',
+        parts: [{ text: m.content || m.text }]
+      }));
+    }
+
+    const chat = model.startChat({ history });
+    const userQuery = query || (messages && messages[messages.length - 1]?.content) || (messages && messages[messages.length - 1]?.text) || '';
+    
+    if (!userQuery) return res.status(400).json({ error: 'Query is required' });
+
+    const result = await chat.sendMessage(userQuery);
+    const responseText = result.response.text();
 
     res.json({ 
-      reply: responseText, // frontend expects reply
-      text: responseText,  // compatibility
-      time: timestamp
+      reply: responseText,
+      text: responseText,
+      time: new Date().toLocaleTimeString()
     });
 
   } catch (err) {
-    console.error('Chat error:', err.message);
-    res.status(500).json({ error: 'AI failed to respond. Please try again.' });
+    console.error('Demo chat error:', err);
+    res.status(500).json({ error: err.message || 'Demo AI failed to respond.' });
   }
 });
 
