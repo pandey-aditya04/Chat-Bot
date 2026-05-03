@@ -8,6 +8,7 @@
   /* Color Tokens */
   --color-brand: #6366f1;
   --color-brand-hover: #4f46e5;
+  --color-brand-muted: rgba(99, 102, 241, 0.12);
   --color-accent: #8b5cf6;
   --color-surface: #0f0f1a;
   --color-surface-raised: #16162a;
@@ -15,6 +16,13 @@
   --color-success: #10b981;
   --color-danger: #ef4444;
   --color-warning: #f59e0b;
+  
+  /* Border & Text Colors (Added to @theme for Tailwind 4 utility generation) */
+  --color-border: rgba(255, 255, 255, 0.08);
+  --color-border-strong: rgba(255, 255, 255, 0.15);
+  --color-text-primary: #f1f5f9;
+  --color-text-secondary: #94a3b8;
+  --color-text-muted: #475569;
 
   /* Standardized Radius */
   --radius-2xl: 16px;
@@ -23,16 +31,6 @@
 }
 
 @layer base {
-  :root {
-    --color-brand: #6366f1;
-    --color-brand-muted: rgba(99, 102, 241, 0.12);
-    --color-border: rgba(255, 255, 255, 0.08);
-    --color-border-strong: rgba(255, 255, 255, 0.15);
-    --color-text-primary: #f1f5f9;
-    --color-text-secondary: #94a3b8;
-    --color-text-muted: #475569;
-  }
-
   .light {
     --color-surface: #f8fafc;
     --color-surface-raised: #ffffff;
@@ -43,7 +41,7 @@
   }
 
   * {
-    @apply border-border;
+    border-color: var(--color-border);
   }
 
   body {
