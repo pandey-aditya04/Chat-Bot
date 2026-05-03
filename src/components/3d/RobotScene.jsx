@@ -1,20 +1,27 @@
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, Float, MeshDistortMaterial, Sphere, PerspectiveCamera } from '@react-three/drei';
+import { OrbitControls, Float, PerspectiveCamera, RoundedBox } from '@react-three/drei';
 import { useRef } from 'react';
 import * as THREE from 'three';
 
 const RobotModel = () => {
   const group = useRef();
   const head = useRef();
+  const leftEye = useRef();
+  const rightEye = useRef();
   
   useFrame((state) => {
     const t = state.clock.getElapsedTime();
     const { x, y } = state.mouse;
     
     // Smoothly follow mouse
-    group.current.rotation.y = THREE.MathUtils.lerp(group.current.rotation.y, x * 0.5, 0.1);
-    head.current.rotation.x = THREE.MathUtils.lerp(head.current.rotation.x, -y * 0.4, 0.1);
-    head.current.rotation.y = THREE.MathUtils.lerp(head.current.rotation.y, x * 0.8, 0.1);
+    group.current.rotation.y = THREE.MathUtils.lerp(group.current.rotation.y, x * 0.4, 0.1);
+    head.current.rotation.x = THREE.MathUtils.lerp(head.current.rotation.x, -y * 0.3, 0.1);
+    head.current.rotation.y = THREE.MathUtils.lerp(head.current.rotation.y, x * 0.6, 0.1);
+    
+    // Animate eyes (blinking/pulsing)
+    const eyeScale = 1 + Math.sin(t * 2) * 0.05;
+    leftEye.current.scale.set(eyeScale, eyeScale, eyeScale);
+    rightEye.current.scale.set(eyeScale, eyeScale, eyeScale);
     
     // Add subtle idle bobbing
     group.current.position.y = Math.sin(t) * 0.1;
@@ -22,56 +29,64 @@ const RobotModel = () => {
 
   return (
     <group ref={group}>
-      <Float speed={4} rotationIntensity={0.5} floatIntensity={1}>
+      <Float speed={3} rotationIntensity={0.2} floatIntensity={0.5}>
         {/* Head */}
-        <mesh ref={head} position={[0, 0.5, 0]}>
-          <sphereGeometry args={[0.5, 32, 32]} />
-          <meshStandardMaterial 
-            color="#6366f1" 
-            metalness={0.9} 
-            roughness={0.1}
-            emissive="#6366f1"
-            emissiveIntensity={0.2}
-          />
-          {/* Eyes */}
-          <mesh position={[0.2, 0.1, 0.4]}>
-            <sphereGeometry args={[0.08, 16, 16]} />
-            <meshBasicMaterial color="#ffffff" />
+        <group ref={head} position={[0, 0.6, 0]}>
+          <RoundedBox args={[1.2, 0.9, 0.8]} radius={0.3} smoothness={4}>
+            <meshStandardMaterial color="#ffffff" roughness={0.1} metalness={0.2} />
+          </RoundedBox>
+          
+          {/* Face Screen */}
+          <mesh position={[0, 0, 0.36]}>
+            <RoundedBox args={[0.9, 0.6, 0.1]} radius={0.15} smoothness={4}>
+              <meshStandardMaterial color="#1a1a2e" roughness={0} metalness={0.8} />
+            </RoundedBox>
           </mesh>
-          <mesh position={[-0.2, 0.1, 0.4]}>
-            <sphereGeometry args={[0.08, 16, 16]} />
-            <meshBasicMaterial color="#ffffff" />
+
+          {/* Cyan Eyes */}
+          <mesh ref={leftEye} position={[-0.25, 0.05, 0.42]}>
+            <sphereGeometry args={[0.1, 16, 16, 0, Math.PI * 2, 0, Math.PI / 2]} />
+            <meshBasicMaterial color="#40e0d0" />
           </mesh>
-        </mesh>
+          <mesh ref={rightEye} position={[0.25, 0.05, 0.42]}>
+            <sphereGeometry args={[0.1, 16, 16, 0, Math.PI * 2, 0, Math.PI / 2]} />
+            <meshBasicMaterial color="#40e0d0" />
+          </mesh>
+          
+          {/* Mouth (optional, matches the smile in image) */}
+          <mesh position={[0, -0.15, 0.42]} rotation={[0, 0, Math.PI]}>
+            <torusGeometry args={[0.08, 0.02, 16, 32, Math.PI]} />
+            <meshBasicMaterial color="#40e0d0" />
+          </mesh>
+        </group>
 
         {/* Body */}
-        <mesh position={[0, -0.3, 0]}>
-          <capsuleGeometry args={[0.4, 0.6, 32, 32]} />
-          <meshStandardMaterial 
-            color="#4f46e5" 
-            metalness={0.8} 
-            roughness={0.2}
-          />
+        <mesh position={[0, -0.4, 0]}>
+          <sphereGeometry args={[0.6, 32, 32]} />
+          <meshStandardMaterial color="#ffffff" roughness={0.1} metalness={0.2} />
+        </mesh>
+        
+        {/* Decorative line on body */}
+        <mesh position={[0, -0.5, 0.5]} rotation={[Math.PI / 2, 0, 0]}>
+           <torusGeometry args={[0.3, 0.01, 16, 100, Math.PI]} />
+           <meshBasicMaterial color="#e2e8f0" />
         </mesh>
 
-        {/* Decorative Ring */}
-        <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, -0.3, 0]}>
-          <torusGeometry args={[0.6, 0.02, 16, 100]} />
-          <meshStandardMaterial color="#8b5cf6" emissive="#8b5cf6" emissiveIntensity={2} />
+        {/* Floating Arms */}
+        <mesh position={[-0.8, -0.2, 0]} rotation={[0, 0, 0.2]}>
+          <capsuleGeometry args={[0.15, 0.4, 16, 16]} />
+          <meshStandardMaterial color="#ffffff" />
+        </mesh>
+        <mesh position={[0.8, -0.2, 0]} rotation={[0, 0, -0.2]}>
+          <capsuleGeometry args={[0.15, 0.4, 16, 16]} />
+          <meshStandardMaterial color="#ffffff" />
         </mesh>
 
-        {/* Floating Particles */}
-        <Sphere args={[1.5, 64, 64]}>
-          <MeshDistortMaterial
-            color="#6366f1"
-            attach="material"
-            distort={0.4}
-            speed={2}
-            roughness={0}
-            transparent
-            opacity={0.1}
-          />
-        </Sphere>
+        {/* Soft shadow below */}
+        <mesh position={[0, -1.2, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <planeGeometry args={[1.5, 1.5]} />
+          <meshBasicMaterial color="#000000" transparent opacity={0.1} />
+        </mesh>
       </Float>
     </group>
   );
@@ -80,11 +95,11 @@ const RobotModel = () => {
 const RobotScene = () => {
   return (
     <div className="w-full h-[500px] cursor-grab active:cursor-grabbing">
-      <Canvas shadows>
-        <PerspectiveCamera makeDefault position={[0, 0, 4]} fov={50} />
-        <ambientLight intensity={0.5} />
-        <spotLight position={[10, 10, 10]} angle={0.15} penumbra={1} intensity={1} castShadow />
-        <pointLight position={[-10, -10, -10]} intensity={0.5} />
+      <Canvas shadows dpr={[1, 2]}>
+        <PerspectiveCamera makeDefault position={[0, 0, 4]} fov={45} />
+        <ambientLight intensity={0.8} />
+        <spotLight position={[5, 5, 5]} angle={0.15} penumbra={1} intensity={1} />
+        <pointLight position={[-5, -5, -5]} intensity={0.5} color="#6366f1" />
         
         <RobotModel />
         
