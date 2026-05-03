@@ -30,11 +30,11 @@ app.use(express.urlencoded({ extended: true }));
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
-    time: new Date(),
+    timestamp: new Date(),
     gemini: !!process.env.GEMINI_API_KEY,
     supabase: !!process.env.SUPABASE_URL
-  });
-});
+  })
+})
 
 // Routes
 app.use('/api/auth', require('./routes/auth'));
