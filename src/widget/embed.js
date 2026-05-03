@@ -8,7 +8,7 @@ const script = document.currentScript ||
 
 const botId = script?.getAttribute('data-bot-id')
 const apiUrl = script?.getAttribute('data-api-url') ||
-  'https://chatbotserver-4sqr.onrender.com/api'
+  'https://chat-bottt.onrender.com/api'
 
 const color = script?.getAttribute('data-color') || '#7c3aed'
 

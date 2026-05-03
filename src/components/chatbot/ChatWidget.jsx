@@ -5,7 +5,7 @@ import TypingIndicator from './TypingIndicator';
 
 const API_URL = (import.meta.env.VITE_API_URL && !import.meta.env.VITE_API_URL.includes('localhost')) 
   ? import.meta.env.VITE_API_URL 
-  : 'https://chatbotserver-4sqr.onrender.com/api';
+  : 'https://chat-bottt.onrender.com/api';
 
 const ChatWidget = ({
   botId,

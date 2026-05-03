@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://chatbotserver-4sqr.onrender.com/api/:path*"
+      "destination": "https://chat-bottt.onrender.com/api/:path*"
     },
     {
       "source": "/(.*)",

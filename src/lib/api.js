@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { supabase } from './supabase';
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://chatbotserver-4sqr.onrender.com/api';
+const API_URL = import.meta.env.VITE_API_URL || 'https://chat-bottt.onrender.com/api';
 
 const api = axios.create({
   baseURL: API_URL,
