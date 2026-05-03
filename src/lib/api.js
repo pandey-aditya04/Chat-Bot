@@ -1,13 +1,11 @@
 import axios from 'axios';
 import { supabase } from './supabase';
 
-const API_URL = (import.meta.env.VITE_API_URL && !import.meta.env.VITE_API_URL.includes('localhost')) 
-  ? import.meta.env.VITE_API_URL 
-  : 'https://chatbotserver-4sqr.onrender.com/api';
+const API_URL = import.meta.env.VITE_API_URL || 'https://chatbotserver-4sqr.onrender.com/api';
 
 const api = axios.create({
   baseURL: API_URL,
-  timeout: 10000,
+  timeout: 30000,
   withCredentials: true,
 });
 
@@ -15,20 +13,17 @@ const api = axios.create({
 api.interceptors.request.use(
   async (config) => {
     try {
-      if (supabase) {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.access_token) {
-          config.headers.Authorization = `Bearer ${session.access_token}`;
-        }
-      } else {
-        // Fallback for older flow
-        const token = localStorage.getItem('token');
-        if (token) {
-          config.headers.Authorization = `Bearer ${token}`;
-        }
+      // 1. Try Supabase session first
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      // 2. Fallback to localStorage (Legacy)
+      const token = session?.access_token || localStorage.getItem('token');
+      
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
       }
     } catch (err) {
-      console.warn('Error getting session in interceptor', err);
+      console.warn('[API Interceptor] Token retrieval failed', err);
     }
     return config;
   },
@@ -40,16 +35,12 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     if (error.response?.status === 401) {
+      // Clean up on unauthorized
+      localStorage.removeItem('token');
       try {
-        if (supabase) {
-          await supabase.auth.signOut();
-        } else {
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
-        }
-      } catch(e) {}
+        await supabase.auth.signOut();
+      } catch (e) {}
       
-      // Redirect to login if not already there
       if (!window.location.pathname.includes('/login')) {
         window.location.href = '/login';
       }
@@ -75,7 +66,7 @@ export const botAPI = {
 
 export const chatAPI = {
   interact: (botId, query, sessionId) => 
-    api.post(`/public/bots/${botId}/interact`, { query, sessionId }),
+    api.post(`/chat`, { botId, query, sessionId }), // Simplified chat endpoint
 };
 
 export const logAPI = {

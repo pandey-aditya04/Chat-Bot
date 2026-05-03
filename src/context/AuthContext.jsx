@@ -1,128 +1,98 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 
-const AuthContext = createContext();
-
-const API_BASE = (import.meta.env.VITE_API_URL && !import.meta.env.VITE_API_URL.includes('localhost'))
-  ? import.meta.env.VITE_API_URL.replace('/api', '')
-  : 'https://chatbotserver-4sqr.onrender.com';
+const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [token, setToken] = useState(null);
-  // Start true — ProtectedRoute will hold until we know auth state
+  const [token, setToken] = useState(localStorage.getItem('token'));
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!supabase) {
-      setLoading(false);
-      return;
-    }
-
-    const hasHashToken = window.location.hash.includes('access_token');
-    let timeoutId;
-
-    // Resolve initial session
+    // 1. Resolve initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      setToken(session?.access_token ?? null);
-      
-      if (!hasHashToken || session) {
-        setLoading(false);
-      } else {
-        // Fallback: don't wait forever if the hash is invalid
-        timeoutId = setTimeout(() => setLoading(false), 3000);
+      if (session) {
+        setUser(session.user);
+        setToken(session.access_token);
+        localStorage.setItem('token', session.access_token);
       }
+      setLoading(false);
     });
 
-    // Keep listening for future changes (OAuth callback, token refresh, logout)
+    // 2. Listen for all auth changes (Login, Logout, Token Refresh, OAuth Callback)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      setUser(session?.user ?? null);
-      setToken(session?.access_token ?? null);
+      console.log('Auth event:', event);
       
       if (session) {
-        setLoading(false);
-        if (timeoutId) clearTimeout(timeoutId);
-      } else if (!hasHashToken && event === 'INITIAL_SESSION') {
-        setLoading(false);
+        setUser(session.user);
+        setToken(session.access_token);
+        localStorage.setItem('token', session.access_token);
+      } else {
+        setUser(null);
+        setToken(null);
+        localStorage.removeItem('token');
       }
+      setLoading(false);
     });
 
-    return () => {
-      subscription.unsubscribe();
-      if (timeoutId) clearTimeout(timeoutId);
-    };
+    return () => subscription.unsubscribe();
   }, []);
 
-  // Email/Password Login — Supabase client directly
+  // Email/Password Login
   const login = async (email, password) => {
-    if (!supabase) throw new Error('Authentication not configured');
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) throw new Error(error.message);
-    return data.user;
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    });
+    if (error) throw error;
+    return data;
   };
 
   // Email/Password Signup
-  const signup = async (name, email, password) => {
-    if (!supabase) throw new Error('Authentication not configured');
+  const signup = async (email, password, metadata = {}) => {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { name } }
+      options: {
+        data: metadata
+      }
     });
-    if (error) throw new Error(error.message);
-
-    // Create user profile row (best-effort)
-    if (data.user && data.session) {
-      try {
-        await fetch(`${API_BASE}/api/auth/signup`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${data.session.access_token}`
-          },
-          body: JSON.stringify({ name, email })
-        });
-      } catch (_) { /* non-fatal */ }
-    }
-
-    return data.user;
+    if (error) throw error;
+    return data;
   };
 
-  // Google OAuth
+  // Google OAuth Login
   const loginWithGoogle = async () => {
-    if (!supabase) throw new Error('Authentication not configured');
-    const { data, error } = await supabase.auth.signInWithOAuth({
+    const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: `${window.location.origin}/dashboard` }
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+        queryParams: { prompt: 'select_account' }
+      }
     });
-    if (error) throw new Error(error.message);
-    return data;
+    if (error) throw error;
   };
 
   // Logout
   const logout = async () => {
-    if (supabase) await supabase.auth.signOut();
-    setUser(null);
-    setToken(null);
+    await supabase.auth.signOut();
+    localStorage.clear();
   };
 
-  const updateProfile = (updates) => {
-    setUser(prev => ({ ...prev, ...updates }));
+  const value = {
+    user,
+    token,
+    loading,
+    isAuthenticated: !!user,
+    login,
+    signup,
+    loginWithGoogle,
+    logout,
+    signOut: logout // Alias for compatibility
   };
 
   return (
-    <AuthContext.Provider value={{
-      user,
-      token,
-      loading,
-      login,
-      signup,
-      logout,
-      loginWithGoogle,
-      updateProfile,
-      isAuthenticated: !!user
-    }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
@@ -130,6 +100,8 @@ export const AuthProvider = ({ children }) => {
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (!context) throw new Error('useAuth must be used within AuthProvider');
+  if (!context) throw new Error('useAuth must be used within an AuthProvider');
   return context;
 };
+
+export default AuthContext;
