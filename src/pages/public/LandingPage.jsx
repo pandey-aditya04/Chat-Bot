@@ -263,8 +263,9 @@ const LandingPage = () => {
               <ChatWidget 
                 faqs={demoBot.faqs} 
                 primaryColor="#6366f1" 
-                welcomeMessage="Hi! 👋 I'm a demo bot. Ask me anything!" 
+                welcomeMessage="Hi! 👋 I'm a demo bot. Ask me anything about ChatBot Builder!" 
                 chatWindowTitle="Live Demo" 
+                isDemo={true}
                 inline 
               />
             </div>

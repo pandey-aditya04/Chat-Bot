@@ -19,6 +19,7 @@ const ChatWidget = ({
   isOpen: controlledOpen,
   onToggle,
   inline = false,
+  isDemo = false,
   className = '',
 }) => {
   // Config state
@@ -118,10 +119,11 @@ const ChatWidget = ({
     setInput('');
     setIsTyping(true);
 
-    if (botId) {
+    if (botId || isDemo) {
       // Server-side interaction
       try {
-        const res = await fetch(`${API_URL}/public/bots/${botId}/interact`, {
+        const endpoint = isDemo ? `${API_URL}/public/demo-chat` : `${API_URL}/public/bots/${botId}/interact`;
+        const res = await fetch(endpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ query: currentInput, sessionId })
@@ -131,8 +133,8 @@ const ChatWidget = ({
         setMessages(prev => [...prev, {
           id: Date.now().toString(),
           role: 'bot',
-          text: data.text,
-          time: data.time
+          text: data.text || data.reply || "Something went wrong.",
+          time: data.time || new Date().toLocaleTimeString()
         }]);
       } catch (err) {
         setIsTyping(false);
