@@ -5,7 +5,6 @@ import AuthLayout from '../../components/layout/AuthLayout';
 import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
 import { useAuth } from '../../context/AuthContext';
-import { useTheme } from '../../context/ThemeContext';
 import { useToast } from '../../hooks/useToast';
 
 const LoginPage = () => {
@@ -17,10 +16,9 @@ const LoginPage = () => {
   const toast = useToast();
   const { user, login, loginWithGoogle, loading } = useAuth();
 
+  // Auto-redirect if already logged in
   useEffect(() => {
-    if (user) {
-      navigate('/dashboard');
-    }
+    if (user) navigate('/dashboard');
   }, [user, navigate]);
 
   const validate = () => {
@@ -41,7 +39,7 @@ const LoginPage = () => {
       toast.success('Welcome back!');
       navigate('/dashboard');
     } catch (err) {
-      toast.error('Login failed. Please try again.');
+      toast.error(err.message || 'Login failed. Please check your credentials.');
     }
   };
 
@@ -62,7 +60,7 @@ const LoginPage = () => {
       </div>
 
       <div className="grid grid-cols-2 gap-4 mb-8">
-        <button 
+        <button
           type="button"
           onClick={async () => {
             try {
@@ -81,7 +79,8 @@ const LoginPage = () => {
           </svg>
           Google
         </button>
-        <button 
+        <button
+          type="button"
           onClick={() => toast.info('GitHub login coming soon!')}
           className="flex items-center justify-center gap-3 py-3 rounded-xl border border-border bg-surface-raised hover:bg-surface-overlay transition-all text-xs font-black uppercase tracking-widest shadow-sm"
         >
@@ -102,7 +101,7 @@ const LoginPage = () => {
       <form onSubmit={handleSubmit} className="space-y-6">
         <Input label="Email" type="email" placeholder="name@example.com" value={email} onChange={e => setEmail(e.target.value)} error={errors.email} icon={Mail} id="login-email" required />
         <Input label="Password" type="password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} error={errors.password} icon={Lock} id="login-password" required />
-        
+
         <div className="flex items-center justify-between">
           <label className="flex items-center gap-2.5 cursor-pointer group">
             <input type="checkbox" checked={remember} onChange={e => setRemember(e.target.checked)} className="w-4 h-4 rounded-lg border-border bg-surface-overlay text-brand focus:ring-brand transition-all" />
