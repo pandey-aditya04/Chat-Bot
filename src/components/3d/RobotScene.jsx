@@ -1,148 +1,92 @@
-import { useRef, useMemo } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, Float, Sparkles, ContactShadows, RoundedBox } from '@react-three/drei';
+import { OrbitControls, Float, MeshDistortMaterial, Sphere, PerspectiveCamera } from '@react-three/drei';
+import { useRef } from 'react';
 import * as THREE from 'three';
-import { useTheme } from '../../context/ThemeContext';
 
-const Robot = ({ isDark }) => {
+const RobotModel = () => {
   const group = useRef();
-  const headRef = useRef();
+  const head = useRef();
   
-  // Track mouse movement to rotate the robot's head
   useFrame((state) => {
     const t = state.clock.getElapsedTime();
-    
-    // Gentle floating animation for the whole group
-    group.current.position.y = Math.sin(t / 1.5) / 10;
-    
-    // Make the head look at the mouse cursor
-    if (headRef.current) {
-      headRef.current.rotation.y = THREE.MathUtils.lerp(headRef.current.rotation.y, (state.mouse.x * Math.PI) / 4, 0.1);
-      headRef.current.rotation.x = THREE.MathUtils.lerp(headRef.current.rotation.x, (-state.mouse.y * Math.PI) / 4, 0.1);
-    }
+    group.current.rotation.y = Math.sin(t / 2) * 0.1;
+    head.current.rotation.x = Math.sin(t) * 0.1;
+    head.current.rotation.y = Math.cos(t / 2) * 0.2;
   });
 
-  const materials = useMemo(() => {
-    return {
-      body: new THREE.MeshStandardMaterial({
-        color: isDark ? '#e2e8f0' : '#ffffff', // Clean light gray/white
-        roughness: 0.2,
-        metalness: 0.1,
-      }),
-      head: new THREE.MeshStandardMaterial({
-        color: isDark ? '#f1f5f9' : '#ffffff', 
-        roughness: 0.2,
-        metalness: 0.1,
-      }),
-      screen: new THREE.MeshStandardMaterial({
-        color: '#0f172a', // Dark blue/black screen
-        roughness: 0.2,
-        metalness: 0.8,
-      }),
-      eye: new THREE.MeshStandardMaterial({
-        color: '#06b6d4', // Cyan
-        emissive: '#06b6d4',
-        emissiveIntensity: 2,
-        toneMapped: false,
-      }),
-    };
-  }, [isDark]);
-
   return (
-    <group ref={group} dispose={null} scale={1.2}>
-      {/* Base / Body */}
-      <mesh material={materials.body} position={[0, -1.2, 0]}>
-        <capsuleGeometry args={[0.7, 0.8, 32, 32]} />
-      </mesh>
-      
-      {/* Left Arm */}
-      <mesh material={materials.body} position={[-1.1, -1.1, 0]} rotation={[0, 0, -Math.PI / 8]}>
-        <capsuleGeometry args={[0.25, 0.8, 16, 16]} />
-      </mesh>
-      
-      {/* Right Arm */}
-      <mesh material={materials.body} position={[1.1, -1.1, 0]} rotation={[0, 0, Math.PI / 8]}>
-        <capsuleGeometry args={[0.25, 0.8, 16, 16]} />
-      </mesh>
-
-      {/* Neck separator (hidden slightly) */}
-      <mesh material={materials.screen} position={[0, -0.3, 0]}>
-        <cylinderGeometry args={[0.3, 0.3, 0.2, 16]} />
-      </mesh>
-
-      <group ref={headRef} position={[0, 0.4, 0]}>
+    <group ref={group}>
+      <Float speed={4} rotationIntensity={0.5} floatIntensity={1}>
         {/* Head */}
-        <RoundedBox args={[1.8, 1.3, 1.4]} radius={0.3} smoothness={4} material={materials.head} />
-        
-        {/* Ear rings */}
-        <mesh material={materials.head} position={[-0.95, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
-          <capsuleGeometry args={[0.2, 0.2, 16, 16]} />
+        <mesh ref={head} position={[0, 0.5, 0]}>
+          <sphereGeometry args={[0.5, 32, 32]} />
+          <meshStandardMaterial 
+            color="#6366f1" 
+            metalness={0.9} 
+            roughness={0.1}
+            emissive="#6366f1"
+            emissiveIntensity={0.2}
+          />
+          {/* Eyes */}
+          <mesh position={[0.2, 0.1, 0.4]}>
+            <sphereGeometry args={[0.08, 16, 16]} />
+            <meshBasicMaterial color="#ffffff" />
+          </mesh>
+          <mesh position={[-0.2, 0.1, 0.4]}>
+            <sphereGeometry args={[0.08, 16, 16]} />
+            <meshBasicMaterial color="#ffffff" />
+          </mesh>
         </mesh>
-        <mesh material={materials.head} position={[0.95, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
-          <capsuleGeometry args={[0.2, 0.2, 16, 16]} />
-        </mesh>
-        
-        {/* Screen / Face Bezel */}
-        <RoundedBox args={[1.5, 1.0, 1.45]} radius={0.2} smoothness={4} material={materials.screen} />
 
-        {/* Eyes (Happy half circles) */}
-        <mesh material={materials.eye} position={[-0.35, 0.1, 0.73]} rotation={[Math.PI / 2, 0, 0]}>
-          <cylinderGeometry args={[0.15, 0.15, 0.05, 32, 1, false, 0, Math.PI]} />
-        </mesh>
-        <mesh material={materials.eye} position={[0.35, 0.1, 0.73]} rotation={[Math.PI / 2, 0, 0]}>
-          <cylinderGeometry args={[0.15, 0.15, 0.05, 32, 1, false, 0, Math.PI]} />
+        {/* Body */}
+        <mesh position={[0, -0.3, 0]}>
+          <capsuleGeometry args={[0.4, 0.6, 32, 32]} />
+          <meshStandardMaterial 
+            color="#4f46e5" 
+            metalness={0.8} 
+            roughness={0.2}
+          />
         </mesh>
 
-        {/* Mouth (Happy smile) */}
-        <mesh material={materials.eye} position={[0, -0.2, 0.73]} rotation={[-Math.PI / 2, 0, 0]}>
-          <cylinderGeometry args={[0.12, 0.12, 0.05, 32, 1, false, 0, Math.PI]} />
+        {/* Decorative Ring */}
+        <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, -0.3, 0]}>
+          <torusGeometry args={[0.6, 0.02, 16, 100]} />
+          <meshStandardMaterial color="#8b5cf6" emissive="#8b5cf6" emissiveIntensity={2} />
         </mesh>
-      </group>
+
+        {/* Floating Particles */}
+        <Sphere args={[1.5, 64, 64]}>
+          <MeshDistortMaterial
+            color="#6366f1"
+            attach="material"
+            distort={0.4}
+            speed={2}
+            roughness={0}
+            transparent
+            opacity={0.1}
+          />
+        </Sphere>
+      </Float>
     </group>
   );
 };
 
 const RobotScene = () => {
-  const { isDark } = useTheme();
-
   return (
-    <div className="w-full h-full min-h-[400px] relative">
-      {/* Fallback blurred background glow matching the robot */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        <div className="w-64 h-64 bg-primary/20 rounded-full blur-3xl"></div>
-      </div>
-      
-      <Canvas camera={{ position: [0, 0, 5], fov: 45 }} className="w-full h-full">
-        <ambientLight intensity={isDark ? 0.8 : 1.2} />
-        <directionalLight position={[10, 10, 5]} intensity={1.5} color={'#ffffff'} />
-        <directionalLight position={[-10, -10, -5]} intensity={0.5} color="#e2e8f0" />
+    <div className="w-full h-[500px] cursor-grab active:cursor-grabbing">
+      <Canvas shadows>
+        <PerspectiveCamera makeDefault position={[0, 0, 4]} fov={50} />
+        <ambientLight intensity={0.5} />
+        <spotLight position={[10, 10, 10]} angle={0.15} penumbra={1} intensity={1} castShadow />
+        <pointLight position={[-10, -10, -10]} intensity={0.5} />
         
-        <Float speed={2} rotationIntensity={0.2} floatIntensity={1}>
-          <Robot isDark={isDark} />
-        </Float>
-        
-        <Sparkles 
-          count={100} 
-          scale={5} 
-          size={3} 
-          speed={0.4} 
-          opacity={isDark ? 0.5 : 0.8} 
-          color="#a78bfa" 
-        />
-        
-        <ContactShadows 
-          position={[0, -2.5, 0]} 
-          opacity={isDark ? 0.8 : 0.3} 
-          scale={10} 
-          blur={2.5} 
-          far={4} 
-        />
+        <RobotModel />
         
         <OrbitControls 
           enableZoom={false} 
-          enablePan={false} 
-          minPolarAngle={Math.PI / 2.5} 
-          maxPolarAngle={Math.PI / 2} 
+          enablePan={false}
+          minPolarAngle={Math.PI / 2.5}
+          maxPolarAngle={Math.PI / 1.5}
         />
       </Canvas>
     </div>

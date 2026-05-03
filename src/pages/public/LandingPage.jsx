@@ -10,7 +10,7 @@ import { pricingPlans } from '../../data/pricingPlans';
 import { mockBots } from '../../data/mockBots';
 import ChatWidget from '../../components/chatbot/ChatWidget';
 import FadeIn from '../../components/ui/FadeIn';
-import HeroImage from '../../assets/hero-ai.png';
+import RobotScene from '../../components/3d/RobotScene';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Helmet } from 'react-helmet-async';
 import { useTheme } from '../../context/ThemeContext';
@@ -192,19 +192,9 @@ const LandingPage = () => {
               </FadeIn>
             </div>
 
-            <div className="hidden lg:flex items-center justify-center relative">
+            <div className="hidden lg:block relative">
               <div className="absolute inset-0 bg-brand/10 rounded-full blur-[120px] animate-pulse" />
-              <motion.div 
-                animate={{ y: [0, -20, 0] }}
-                transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-                className="relative z-10"
-              >
-                <img 
-                  src={HeroImage} 
-                  alt="AI Assistant" 
-                  className="w-full h-auto max-w-lg drop-shadow-2xl rounded-3xl"
-                />
-              </motion.div>
+              <RobotScene />
             </div>
           </div>
         </div>
