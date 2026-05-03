@@ -19,21 +19,39 @@ export const AuthProvider = ({ children }) => {
       return;
     }
 
-    // Resolve initial session ONCE to prevent flicker
+    const hasHashToken = window.location.hash.includes('access_token');
+    let timeoutId;
+
+    // Resolve initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       setToken(session?.access_token ?? null);
-      setLoading(false); // Only set loading false after initial check
+      
+      if (!hasHashToken || session) {
+        setLoading(false);
+      } else {
+        // Fallback: don't wait forever if the hash is invalid
+        timeoutId = setTimeout(() => setLoading(false), 3000);
+      }
     });
 
     // Keep listening for future changes (OAuth callback, token refresh, logout)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user ?? null);
       setToken(session?.access_token ?? null);
-      // Don't touch loading here — it's already resolved by getSession above
+      
+      if (session) {
+        setLoading(false);
+        if (timeoutId) clearTimeout(timeoutId);
+      } else if (!hasHashToken && event === 'INITIAL_SESSION') {
+        setLoading(false);
+      }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+      if (timeoutId) clearTimeout(timeoutId);
+    };
   }, []);
 
   // Email/Password Login — Supabase client directly
