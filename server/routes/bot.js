@@ -7,15 +7,14 @@ const { supabase } = require('../config/supabase');
 const mapToSnakeCase = (data) => ({
   name: data.name,
   website: data.website,
-  theme_color: data.color || data.theme_color,
+  primary_color: data.color || data.primaryColor || data.primary_color || '#6366f1',
   welcome_message: data.welcomeMessage || data.welcome_message,
-  tone: data.tone,
+  tone: data.tone || 'Friendly',
   fallback_message: data.fallbackMessage || data.fallback_message,
-  chat_position: data.chatPosition || data.chat_position,
-  launcher_icon: data.launcherIcon || data.launcher_icon,
-  max_response_length: data.maxResponseLength || data.max_response_length,
-  status: data.status || 'Active',
-  is_active: data.isActive !== undefined ? data.isActive : true
+  chat_position: data.chatPosition || data.chat_position || 'Right',
+  launcher_icon: data.launcherIcon || data.launcher_icon || 'Chat Bubble',
+  max_response_length: data.maxResponseLength || data.max_response_length || 'Medium',
+  status: data.status || 'Active'
 });
 
 // GET /api/bots - List user's bots
@@ -23,11 +22,14 @@ router.get('/', authenticate, async (req, res) => {
   try {
     const { data, error } = await supabase
       .from('bots')
-      .select('*')
+      .select('*, faqs(*)')
       .eq('user_id', req.userId)
       .order('created_at', { ascending: false });
 
-    if (error) throw error;
+    if (error) {
+      console.error('Fetch bots error:', error);
+      throw error;
+    }
     res.json(data);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -38,12 +40,18 @@ router.get('/', authenticate, async (req, res) => {
 router.post('/', authenticate, async (req, res) => {
   try {
     const { name, faqs } = req.body;
-    if (!name) return res.status(400).json({ error: 'Bot name is required' });
+    console.log('Creating bot for user:', req.userId, 'name:', name);
+
+    if (!name?.trim()) {
+      return res.status(400).json({ error: 'Bot name is required' });
+    }
 
     const dataToInsert = {
       ...mapToSnakeCase(req.body),
       user_id: req.userId
     };
+
+    console.log('Inserting bot data:', dataToInsert);
 
     const { data: bot, error: botError } = await supabase
       .from('bots')
@@ -51,7 +59,10 @@ router.post('/', authenticate, async (req, res) => {
       .select()
       .single();
 
-    if (botError) throw botError;
+    if (botError) {
+      console.error('Supabase bot insert error:', botError);
+      throw botError;
+    }
 
     // Insert FAQs if any
     if (faqs && Array.isArray(faqs) && faqs.length > 0) {
@@ -61,7 +72,11 @@ router.post('/', authenticate, async (req, res) => {
         answer: faq.answer
       }));
 
-      await supabase.from('faqs').insert(faqsToInsert);
+      const { error: faqError } = await supabase.from('faqs').insert(faqsToInsert);
+      if (faqError) {
+        console.error('Supabase FAQ insert error:', faqError);
+        // We don't throw here to avoid failing the whole bot creation if just FAQs fail
+      }
     }
 
     // Return bot with FAQs
@@ -71,8 +86,10 @@ router.post('/', authenticate, async (req, res) => {
       .eq('id', bot.id)
       .single();
 
+    console.log('Bot created successfully:', finalBot.id);
     res.status(201).json(finalBot);
   } catch (err) {
+    console.error('Bot creation crash:', err.message);
     res.status(500).json({ error: err.message });
   }
 });

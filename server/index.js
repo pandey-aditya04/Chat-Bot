@@ -47,7 +47,7 @@ app.get('/api/bots/:botId/public', async (req, res) => {
   try {
     const { data: bot, error } = await supabase
       .from('bots')
-      .select('name, theme_color, welcome_message, tone')
+      .select('name, primary_color, welcome_message, tone, fallback_message, chat_window_title, launcher_icon')
       .eq('id', req.params.botId)
       .single();
 
@@ -55,11 +55,15 @@ app.get('/api/bots/:botId/public', async (req, res) => {
 
     res.json({
       name: bot.name,
-      color: bot.theme_color,
+      color: bot.primary_color,
       welcomeMessage: bot.welcome_message,
-      tone: bot.tone
+      tone: bot.tone,
+      fallbackMessage: bot.fallback_message,
+      chatWindowTitle: bot.chat_window_title,
+      launcherIcon: bot.launcher_icon
     });
   } catch (err) {
+    console.error('Public config error:', err);
     res.status(500).json({ error: 'Server error' });
   }
 });

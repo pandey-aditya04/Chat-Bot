@@ -122,38 +122,58 @@ const ChatWidget = ({
     if (botId || isDemo) {
       // Server-side interaction
       try {
-        const endpoint = isDemo ? `${API_URL}/public/demo-chat` : `${API_URL}/public/bots/${botId}/interact`;
+        const endpoint = isDemo ? `${API_URL}/chat/demo` : `${API_URL}/chat`;
         const res = await fetch(endpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ query: currentInput, sessionId })
+          body: JSON.stringify({ 
+            botId, 
+            query: currentInput, 
+            messages: messages.map(m => ({ role: m.role, content: m.text })),
+            sessionId 
+          })
         });
+        
         const data = await res.json();
+        
+        if (!res.ok) {
+          throw new Error(data.error || 'Server responded with an error');
+        }
+
         setIsTyping(false);
         setMessages(prev => [...prev, {
           id: Date.now().toString(),
           role: 'bot',
-          text: data.text || data.reply || "Something went wrong.",
-          time: data.time || new Date().toLocaleTimeString()
+          text: data.reply || data.text || "I'm sorry, I couldn't process that.",
+          time: data.time || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         }]);
       } catch (err) {
+        console.error('ChatWidget error:', err);
         setIsTyping(false);
         setMessages(prev => [...prev, {
           id: Date.now().toString(),
           role: 'bot',
-          text: "Sorry, I'm having trouble connecting right now.",
-          time: new Date().toLocaleTimeString()
+          text: `⚠️ Error: ${err.message || "Couldn't connect to AI. Please check if the server is running."}`,
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         }]);
       }
     } else {
-      // Local interaction (fallback/demo)
+      // Local interaction (fallback/demo/preview)
       setTimeout(() => {
         const match = matchFAQ(currentInput);
         setIsTyping(false);
+        
+        let responseText = match ? match.answer : config.fallbackMessage;
+        
+        // If it's a preview (no botId), add a hint
+        if (!botId && !isDemo) {
+          responseText = `(PREVIEW) ${responseText}\n\n💡 Save your bot to test real AI responses!`;
+        }
+
         setMessages(prev => [...prev, {
           id: Date.now().toString(),
           role: 'bot',
-          text: match ? match.answer : config.fallbackMessage,
+          text: responseText,
           time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         }]);
       }, 800);
