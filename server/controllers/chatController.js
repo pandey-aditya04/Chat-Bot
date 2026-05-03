@@ -11,8 +11,7 @@ const interact = async (req, res, next) => {
     }
 
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    // Use v1 explicitly if needed
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" }, { apiVersion: 'v1' });
+    const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
     
     // 1. Validation
     if (!query || query.length > 1000) {
