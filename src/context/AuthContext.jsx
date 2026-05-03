@@ -10,7 +10,8 @@ const API_BASE = (import.meta.env.VITE_API_URL && !import.meta.env.VITE_API_URL.
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
-  const [loading, setLoading] = useState(true); // Start true so ProtectedRoute waits
+  // Start true — ProtectedRoute will hold until we know auth state
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!supabase) {
@@ -18,68 +19,61 @@ export const AuthProvider = ({ children }) => {
       return;
     }
 
-    // Get existing session on mount
+    // Resolve initial session ONCE to prevent flicker
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       setToken(session?.access_token ?? null);
-      setLoading(false);
+      setLoading(false); // Only set loading false after initial check
     });
 
-    // Listen for any auth changes (login, logout, token refresh, OAuth callback)
+    // Keep listening for future changes (OAuth callback, token refresh, logout)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
       setToken(session?.access_token ?? null);
-      setLoading(false);
+      // Don't touch loading here — it's already resolved by getSession above
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
-  // Email/Password Login — goes directly through Supabase
+  // Email/Password Login — Supabase client directly
   const login = async (email, password) => {
-    setLoading(true);
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) throw new Error(error.message);
-      return data.user;
-    } finally {
-      setLoading(false);
-    }
+    if (!supabase) throw new Error('Authentication not configured');
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) throw new Error(error.message);
+    return data.user;
   };
 
-  // Email/Password Signup — creates Supabase auth user + inserts profile row
+  // Email/Password Signup
   const signup = async (name, email, password) => {
-    setLoading(true);
-    try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: { data: { name } }
-      });
-      if (error) throw new Error(error.message);
+    if (!supabase) throw new Error('Authentication not configured');
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: { name } }
+    });
+    if (error) throw new Error(error.message);
 
-      // Create profile in users table (best-effort, non-blocking)
-      if (data.user && data.session) {
-        try {
-          await fetch(`${API_BASE}/api/auth/signup`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${data.session.access_token}`
-            },
-            body: JSON.stringify({ name, email })
-          });
-        } catch (_) { /* non-fatal */ }
-      }
-
-      return data.user;
-    } finally {
-      setLoading(false);
+    // Create user profile row (best-effort)
+    if (data.user && data.session) {
+      try {
+        await fetch(`${API_BASE}/api/auth/signup`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${data.session.access_token}`
+          },
+          body: JSON.stringify({ name, email })
+        });
+      } catch (_) { /* non-fatal */ }
     }
+
+    return data.user;
   };
 
   // Google OAuth
   const loginWithGoogle = async () => {
+    if (!supabase) throw new Error('Authentication not configured');
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: { redirectTo: `${window.location.origin}/dashboard` }

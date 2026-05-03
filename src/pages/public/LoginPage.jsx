@@ -12,14 +12,17 @@ const LoginPage = () => {
   const [password, setPassword] = useState('');
   const [remember, setRemember] = useState(false);
   const [errors, setErrors] = useState({});
+  const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
   const toast = useToast();
-  const { user, login, loginWithGoogle, loading } = useAuth();
+  const { user, loading, login, loginWithGoogle } = useAuth();
 
-  // Auto-redirect if already logged in
+  // Single navigation point — fires only when user state actually changes
   useEffect(() => {
-    if (user) navigate('/dashboard');
-  }, [user, navigate]);
+    if (!loading && user) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [user, loading, navigate]);
 
   const validate = () => {
     const errs = {};
@@ -34,14 +37,20 @@ const LoginPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validate()) return;
+    setSubmitting(true);
     try {
       await login(email, password);
       toast.success('Welcome back!');
-      navigate('/dashboard');
+      // Navigation handled by useEffect above when user state updates
     } catch (err) {
       toast.error(err.message || 'Login failed. Please check your credentials.');
+    } finally {
+      setSubmitting(false);
     }
   };
+
+  // Show nothing while checking existing session
+  if (loading) return null;
 
   return (
     <AuthLayout>
@@ -110,7 +119,7 @@ const LoginPage = () => {
           <button type="button" className="text-xs font-bold text-brand hover:text-brand-hover transition-colors">Forgot password?</button>
         </div>
 
-        <Button type="submit" className="w-full shadow-glow-brand py-4 font-black uppercase tracking-widest text-xs" size="lg" loading={loading} icon={ArrowRight}>
+        <Button type="submit" className="w-full shadow-glow-brand py-4 font-black uppercase tracking-widest text-xs" size="lg" loading={submitting} icon={ArrowRight}>
           Sign In
         </Button>
       </form>

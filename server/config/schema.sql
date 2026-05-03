@@ -23,6 +23,12 @@ CREATE TABLE bots (
   primary_color TEXT DEFAULT '#6366f1',
   welcome_message TEXT,
   chat_window_title TEXT,
+  website TEXT,
+  tone TEXT DEFAULT 'Friendly',
+  fallback_message TEXT,
+  chat_position TEXT DEFAULT 'Right',
+  launcher_icon TEXT DEFAULT 'Chat Bubble',
+  max_response_length TEXT DEFAULT 'Medium',
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
