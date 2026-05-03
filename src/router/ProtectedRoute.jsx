@@ -1,23 +1,23 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
-const ProtectedRoute = ({ children }) => {
-  const { isAuthenticated, loading } = useAuth();
+export default function ProtectedRoute({ children }) {
+  const { user, loading } = useAuth();
 
-  // Wait for Supabase to restore session before making a decision
+  // 1. Still checking session (user is undefined) — show spinner, DO NOT redirect yet
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#0a0a16]">
-        <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+      <div className="flex items-center justify-center min-h-screen bg-[#0a0a16]">
+        <div className="animate-spin h-8 w-8 border-2 border-violet-500 border-t-transparent rounded-full" />
       </div>
     );
   }
 
-  if (!isAuthenticated) {
+  // 2. Confirmed not logged in (user is explicitly null) — redirect to login
+  if (!user) {
     return <Navigate to="/login" replace />;
   }
 
+  // 3. User is an object — authenticated
   return children;
-};
-
-export default ProtectedRoute;
+}

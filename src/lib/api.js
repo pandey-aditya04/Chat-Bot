@@ -13,10 +13,7 @@ const api = axios.create({
 api.interceptors.request.use(
   async (config) => {
     try {
-      // 1. Try Supabase session first
       const { data: { session } } = await supabase.auth.getSession();
-      
-      // 2. Fallback to localStorage (Legacy)
       const token = session?.access_token || localStorage.getItem('token');
       
       if (token) {
@@ -30,20 +27,16 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response interceptor for session expiry
+// Response interceptor
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
+    // If we get a 401, it means the token is invalid or expired
     if (error.response?.status === 401) {
-      // Clean up on unauthorized
+      console.warn('[API] Unauthorized access detected');
+      // We don't force redirect here to avoid loops during OAuth callbacks.
+      // Instead, we clear the token and let ProtectedRoute handle it.
       localStorage.removeItem('token');
-      try {
-        await supabase.auth.signOut();
-      } catch (e) {}
-      
-      if (!window.location.pathname.includes('/login')) {
-        window.location.href = '/login';
-      }
     }
     return Promise.reject(error);
   }
@@ -61,16 +54,11 @@ export const botAPI = {
   create: (data) => api.post('/bots', data),
   update: (id, data) => api.put(`/bots/${id}`, data),
   delete: (id) => api.delete(`/bots/${id}`),
-  getPublicConfig: (id) => api.get(`/bots/public/${id}`),
 };
 
 export const chatAPI = {
   interact: (botId, query, sessionId) => 
-    api.post(`/chat`, { botId, query, sessionId }), // Simplified chat endpoint
-};
-
-export const logAPI = {
-  getAll: () => api.get('/logs'),
+    api.post(`/chat`, { botId, query, sessionId }),
 };
 
 export default api;

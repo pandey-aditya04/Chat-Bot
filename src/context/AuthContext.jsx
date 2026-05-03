@@ -4,35 +4,42 @@ import { supabase } from '../lib/supabase';
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [token, setToken] = useState(localStorage.getItem('token'));
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(undefined); // undefined = still loading
+  const [token, setToken] = useState(null);
 
   useEffect(() => {
-    // 1. Resolve initial session
+    // 1. Resolve initial session on mount
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
         setUser(session.user);
         setToken(session.access_token);
         localStorage.setItem('token', session.access_token);
+      } else {
+        setUser(null); // confirmed not logged in
       }
-      setLoading(false);
     });
 
-    // 2. Listen for all auth changes (Login, Logout, Token Refresh, OAuth Callback)
+    // 2. Listen for all auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log('Auth event:', event);
+      console.log('[Auth Context Event]:', event, session?.user?.email);
       
       if (session) {
         setUser(session.user);
         setToken(session.access_token);
         localStorage.setItem('token', session.access_token);
-      } else {
+      }
+
+      if (event === 'TOKEN_REFRESHED' && session) {
+        setToken(session.access_token);
+        localStorage.setItem('token', session.access_token);
+      }
+
+      if (event === 'SIGNED_OUT') {
         setUser(null);
         setToken(null);
         localStorage.removeItem('token');
+        localStorage.removeItem('user');
       }
-      setLoading(false);
     });
 
     return () => subscription.unsubscribe();
@@ -40,10 +47,7 @@ export const AuthProvider = ({ children }) => {
 
   // Email/Password Login
   const login = async (email, password) => {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password
-    });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
     return data;
   };
@@ -53,9 +57,7 @@ export const AuthProvider = ({ children }) => {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: {
-        data: metadata
-      }
+      options: { data: metadata }
     });
     if (error) throw error;
     return data;
@@ -63,32 +65,31 @@ export const AuthProvider = ({ children }) => {
 
   // Google OAuth Login
   const loginWithGoogle = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
+    await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
         redirectTo: `${window.location.origin}/auth/callback`,
         queryParams: { prompt: 'select_account' }
       }
     });
-    if (error) throw error;
   };
 
   // Logout
   const logout = async () => {
     await supabase.auth.signOut();
-    localStorage.clear();
   };
 
   const value = {
     user,
     token,
-    loading,
+    loading: user === undefined,
     isAuthenticated: !!user,
     login,
     signup,
     loginWithGoogle,
+    signInWithGoogle: loginWithGoogle, // Alias
     logout,
-    signOut: logout // Alias for compatibility
+    signOut: logout // Alias
   };
 
   return (
