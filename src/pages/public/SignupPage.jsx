@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Mail, Lock, User, Bot, ArrowRight, Github } from 'lucide-react';
+import { Mail, Lock, User, Bot, ArrowRight, Code2 } from 'lucide-react';
 import AuthLayout from '../../components/layout/AuthLayout';
 import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
@@ -74,7 +74,7 @@ const SignupPage = () => {
           onClick={() => toast.info('GitHub login coming soon!')}
           className="flex items-center justify-center gap-3 py-3 rounded-xl border border-border bg-surface-raised hover:bg-surface-overlay transition-all text-xs font-black uppercase tracking-widest shadow-sm"
         >
-          <Github className="w-4 h-4" />
+          <Code2 className="w-4 h-4" />
           GitHub
         </button>
       </div>

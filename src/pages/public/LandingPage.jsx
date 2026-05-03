@@ -9,7 +9,6 @@ import {
 import { pricingPlans } from '../../data/pricingPlans';
 import { mockBots } from '../../data/mockBots';
 import ChatWidget from '../../components/chatbot/ChatWidget';
-import HeroOrb from '../../components/3d/HeroOrb';
 import FadeIn from '../../components/ui/FadeIn';
 import { Helmet } from 'react-helmet-async';
 import { useTheme } from '../../context/ThemeContext';
@@ -191,9 +190,9 @@ const LandingPage = () => {
               </FadeIn>
             </div>
 
-            <div className="hidden lg:block relative">
-              <div className="absolute inset-0 bg-brand/5 rounded-full blur-3xl animate-pulse" />
-              <HeroOrb />
+            <div className="hidden lg:block relative h-[400px]">
+              <div className="absolute inset-0 bg-brand/10 rounded-full blur-[100px] animate-pulse" />
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-brand/20 rounded-full blur-2xl animate-pulse" />
             </div>
           </div>
         </div>
