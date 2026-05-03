@@ -18,7 +18,7 @@ const authenticate = async (req, res, next) => {
 
     // Get user profile
     const { data: profile, error: profileError } = await supabase
-      .from('profiles')
+      .from('users')
       .select('*')
       .eq('id', authUser.id)
       .single();
