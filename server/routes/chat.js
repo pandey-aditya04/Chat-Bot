@@ -21,7 +21,7 @@ router.post('/', async (req, res) => {
 
     // 2. Build system prompt
     const faqContext = bot.faqs?.map(f => `Q: ${f.question}\nA: ${f.answer}`).join('\n\n') || '';
-    
+
     const systemPrompt = `
       You are ${bot.name}, a helpful AI assistant.
       
@@ -29,14 +29,24 @@ router.post('/', async (req, res) => {
       Tone: ${bot.tone || 'Friendly'}
       
       KNOWLEDGE BASE:
-      ${faqContext ? `Answer based ONLY on this information if possible:\n${faqContext}` : 'Answer helpfully based on general knowledge.'}
+      ${faqContext ? `
+      You have access to a specific knowledge base provided below. 
+      Answer the user's questions based on this information.
+      
+      INFORMATION:
+      ${faqContext}
+      ` : 'Answer helpfully and professionally based on your general knowledge.'}
+      
+      GENERAL CONVERSATION:
+      - Always respond naturally to greetings (hi, hello, etc.).
+      - If the user's question is about the knowledge base but slightly different, try to be helpful while staying accurate.
       
       FALLBACK:
-      If the user asks something outside the knowledge base, respond with: "${bot.fallback_message || "I'm not sure about that. Please contact our support team."}"
+      - ONLY if the user asks a specific question that is completely unrelated to the knowledge base and you cannot answer it helpfully, use this exact phrase: "${bot.fallback_message || "I'm not sure about that. Please contact our support team."}"
       
       CONSTRAINTS:
-      - Be concise.
-      - Stay in character.
+      - Be concise but helpful.
+      - Stay in character as ${bot.name}.
       - Don't mention you are an AI model.
     `;
 
@@ -109,7 +119,11 @@ router.post('/demo', async (req, res) => {
     const systemPrompt = `
       You are ChatBot Builder Demo, a helpful AI assistant showcasing how our platform works.
       Be friendly, professional, and slightly enthusiastic about ChatBot Builder.
-      Answer questions about chatbots and AI helpfully.
+      
+      GOALS:
+      - Answer questions about chatbots, AI, and this platform helpfully.
+      - Respond naturally to greetings and small talk.
+      - Keep responses relatively concise but engaging.
     `;
 
     if (!process.env.GEMINI_API_KEY) {

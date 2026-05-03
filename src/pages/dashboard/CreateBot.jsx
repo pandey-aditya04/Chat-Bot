@@ -238,7 +238,7 @@ const CreateBot = () => {
                   <div className="relative">
                     <p className="text-[10px] font-black uppercase tracking-widest text-text-muted mb-4">Interface Preview</p>
                     <div className="sticky top-0 bg-surface-overlay rounded-3xl p-2 border border-border shadow-2xl">
-                      <ChatWidget faqs={form.faqs.filter(f => f.question && f.answer)} primaryColor={form.primaryColor} welcomeMessage={form.welcomeMessage} chatWindowTitle={form.chatWindowTitle} fallbackMessage={form.fallbackMessage} launcherIcon={form.launcherIcon} inline />
+                      <ChatWidget faqs={form.faqs.filter(f => f.question && f.answer)} primaryColor={form.primaryColor} welcomeMessage={form.welcomeMessage} chatWindowTitle={form.chatWindowTitle} fallbackMessage={form.fallbackMessage} launcherIcon={form.launcherIcon} inline isDemo={true} />
                     </div>
                   </div>
                 </div>
@@ -252,7 +252,7 @@ const CreateBot = () => {
                   </div>
                   <div className="flex justify-center">
                     <div className="w-full max-w-sm bg-surface-overlay rounded-3xl p-2 border border-border shadow-2xl">
-                      <ChatWidget faqs={form.faqs.filter(f => f.question && f.answer)} primaryColor={form.primaryColor} position={form.chatPosition} welcomeMessage={form.welcomeMessage} chatWindowTitle={form.chatWindowTitle} fallbackMessage={form.fallbackMessage} launcherIcon={form.launcherIcon} inline />
+                      <ChatWidget faqs={form.faqs.filter(f => f.question && f.answer)} primaryColor={form.primaryColor} position={form.chatPosition} welcomeMessage={form.welcomeMessage} chatWindowTitle={form.chatWindowTitle} fallbackMessage={form.fallbackMessage} launcherIcon={form.launcherIcon} inline isDemo={true} />
                     </div>
                   </div>
                 </div>
