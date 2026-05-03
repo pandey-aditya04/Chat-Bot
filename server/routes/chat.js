@@ -1,8 +1,8 @@
-import express from 'express';
-import { interact } from '../controllers/chatController.js';
+const express = require('express');
+const { interact } = require('../controllers/chatController');
 
 const router = express.Router();
 
 router.post('/:id/interact', interact);
 
-export default router;
+module.exports = router;

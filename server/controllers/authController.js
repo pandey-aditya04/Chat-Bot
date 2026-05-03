@@ -1,6 +1,6 @@
-import { supabase } from '../config/supabase.js';
+const { supabase } = require('../config/supabase');
 
-export const signup = async (req, res, next) => {
+const signup = async (req, res, next) => {
   try {
     const { name, email, password } = req.body;
 
@@ -37,7 +37,7 @@ export const signup = async (req, res, next) => {
   }
 };
 
-export const login = async (req, res, next) => {
+const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
@@ -64,3 +64,5 @@ export const login = async (req, res, next) => {
     next(error);
   }
 };
+
+module.exports = { signup, login };

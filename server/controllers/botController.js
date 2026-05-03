@@ -1,6 +1,6 @@
-import { supabase } from '../config/supabase.js';
+const { supabase } = require('../config/supabase');
 
-export const getAllBots = async (req, res, next) => {
+const getAllBots = async (req, res, next) => {
   try {
     let query = supabase
       .from('bots')
@@ -20,10 +20,32 @@ export const getAllBots = async (req, res, next) => {
   }
 };
 
-export const createBot = async (req, res, next) => {
+const mapToSnakeCase = (data) => {
+  const mapping = {
+    primaryColor: 'primary_color',
+    welcomeMessage: 'welcome_message',
+    chatWindowTitle: 'chat_window_title',
+    fallbackMessage: 'fallback_message',
+    chatPosition: 'chat_position',
+    launcherIcon: 'launcher_icon',
+    maxResponseLength: 'max_response_length'
+  };
+  const result = {};
+  for (const key in data) {
+    if (mapping[key]) {
+      result[mapping[key]] = data[key];
+    } else {
+      result[key] = data[key];
+    }
+  }
+  return result;
+};
+
+const createBot = async (req, res, next) => {
   try {
     const { faqs, ...botData } = req.body;
-    const dataToInsert = { ...botData, user_id: req.user.id };
+    const snakeBotData = mapToSnakeCase(botData);
+    const dataToInsert = { ...snakeBotData, user_id: req.user.id };
 
     // Insert bot
     const { data: bot, error: botError } = await supabase
@@ -62,7 +84,7 @@ export const createBot = async (req, res, next) => {
   }
 };
 
-export const getBotById = async (req, res, next) => {
+const getBotById = async (req, res, next) => {
   try {
     let query = supabase
       .from('bots')
@@ -83,17 +105,17 @@ export const getBotById = async (req, res, next) => {
   }
 };
 
-export const updateBot = async (req, res, next) => {
+const updateBot = async (req, res, next) => {
   try {
     const { faqs, ...botData } = req.body;
+    const snakeBotData = mapToSnakeCase(botData);
     const botId = req.params.id;
 
     // Update bot metadata
     const { error: botError } = await supabase
       .from('bots')
-      .update(botData)
-      .eq('id', botId)
-      .eq(req.user.role === 'admin' ? 'id' : 'user_id', botId); // Simplified security check
+      .update(snakeBotData)
+      .eq('id', botId);
 
     if (botError) throw botError;
 
@@ -125,13 +147,12 @@ export const updateBot = async (req, res, next) => {
   }
 };
 
-export const deleteBot = async (req, res, next) => {
+const deleteBot = async (req, res, next) => {
   try {
     const { error } = await supabase
       .from('bots')
       .delete()
-      .eq('id', req.params.id)
-      .eq(req.user.role === 'admin' ? 'id' : 'user_id', req.user.id);
+      .eq('id', req.params.id);
 
     if (error) throw error;
     res.json({ message: 'Bot deleted' });
@@ -140,7 +161,7 @@ export const deleteBot = async (req, res, next) => {
   }
 };
 
-export const getPublicBotConfig = async (req, res, next) => {
+const getPublicBotConfig = async (req, res, next) => {
   try {
     const { data, error } = await supabase
       .from('bots')
@@ -156,4 +177,13 @@ export const getPublicBotConfig = async (req, res, next) => {
   } catch (error) {
     next(error);
   }
+};
+
+module.exports = {
+  getAllBots,
+  createBot,
+  getBotById,
+  updateBot,
+  deleteBot,
+  getPublicBotConfig
 };

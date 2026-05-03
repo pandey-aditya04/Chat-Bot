@@ -1,4 +1,4 @@
-export const errorHandler = (err, req, res, next) => {
+const errorHandler = (err, req, res, next) => {
   console.error(err.stack);
 
   const status = err.status || 500;
@@ -9,3 +9,5 @@ export const errorHandler = (err, req, res, next) => {
     stack: process.env.NODE_ENV === 'production' ? null : err.stack,
   });
 };
+
+module.exports = { errorHandler };

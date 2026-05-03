@@ -1,46 +1,41 @@
-import express from 'express';
-import cors from 'cors';
-import { supabase } from './config/supabase.js';
-import { GoogleGenerativeAI } from '@google/generative-ai';
-import dotenv from 'dotenv';
-import helmet from 'helmet';
-import rateLimit from 'express-rate-limit';
-import morgan from 'morgan';
-import logger from './utils/logger.js';
-import { errorHandler } from './middleware/errorHandler.js';
+require('dotenv').config();
+const express = require('express');
+const cors = require('cors');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+const morgan = require('morgan');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
+const { supabase } = require('./config/supabase');
+const logger = require('./utils/logger');
+const { errorHandler } = require('./middleware/errorHandler');
 
 // Route Imports
-import authRoutes from './routes/auth.js';
-import botRoutes from './routes/bot.js';
-import chatRoutes from './routes/chat.js';
-import logRoutes from './routes/log.js';
+const authRoutes = require('./routes/auth');
+const botRoutes = require('./routes/bot');
+const chatRoutes = require('./routes/chat');
+const logRoutes = require('./routes/log');
 
-dotenv.config();
-
-// Safety check — log what we have
-console.log('ENV CHECK:', {
-  port: process.env.PORT,
-  nodeEnv: process.env.NODE_ENV,
-  hasSupabaseUrl: !!process.env.SUPABASE_URL,
-  hasSupabaseKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
-  hasGemini: !!process.env.GEMINI_API_KEY
-});
+// Startup health check — tells you exactly what env vars loaded
+console.log('=== SERVER STARTING ===');
+console.log('PORT:', process.env.PORT);
+console.log('NODE_ENV:', process.env.NODE_ENV);
+console.log('HAS_SUPABASE_URL:', !!process.env.SUPABASE_URL);
+console.log('HAS_SUPABASE_KEY:', !!process.env.SUPABASE_SERVICE_ROLE_KEY);
+console.log('HAS_GEMINI_KEY:', !!process.env.GEMINI_API_KEY);
+console.log('HAS_JWT_SECRET:', !!process.env.JWT_SECRET);
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Logging
-app.use(morgan('dev'));
-
 // Security Middleware
 app.use(helmet());
-app.use(cors({ 
-  origin: [
-    'https://chat-bottt-dusky.vercel.app',
-    'http://localhost:5173'
-  ],
-  credentials: true 
+app.use(cors({
+  origin: process.env.ALLOWED_ORIGIN || 'https://chat-bottt-dusky.vercel.app',
+  credentials: true
 }));
+
+// Logging
+app.use(morgan('dev'));
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -50,6 +45,7 @@ const limiter = rateLimit({
 
 // Middleware
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use('/api/', limiter);
 
 // Routes
@@ -144,4 +140,4 @@ if (process.env.VERCEL) {
   });
 }
 
-export default app;
+module.exports = app;

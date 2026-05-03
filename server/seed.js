@@ -1,7 +1,5 @@
-import { supabase } from './config/supabase.js';
-import dotenv from 'dotenv';
-
-dotenv.config();
+const { supabase } = require('./config/supabase');
+require('dotenv').config();
 
 const mockBots = [
   {

@@ -1,6 +1,6 @@
-import { supabase } from '../config/supabase.js';
+const { supabase } = require('../config/supabase');
 
-export const authenticate = async (req, res, next) => {
+const authenticate = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -34,3 +34,5 @@ export const authenticate = async (req, res, next) => {
     res.status(401).json({ message: 'Authentication failed' });
   }
 };
+
+module.exports = { authenticate };

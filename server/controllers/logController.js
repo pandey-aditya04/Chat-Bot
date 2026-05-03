@@ -1,6 +1,6 @@
-import { supabase } from '../config/supabase.js';
+const { supabase } = require('../config/supabase');
 
-export const getLogs = async (req, res, next) => {
+const getLogs = async (req, res, next) => {
   try {
     // Get all bots owned by the user
     let botQuery = supabase.from('bots').select('id');
@@ -30,3 +30,5 @@ export const getLogs = async (req, res, next) => {
     next(error);
   }
 };
+
+module.exports = { getLogs };

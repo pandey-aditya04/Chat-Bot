@@ -47,7 +47,7 @@ const ChatWidget = ({
     if (botId) {
       const fetchConfig = async () => {
         try {
-          const res = await fetch(`${API_URL}/public/bots/${botId}`);
+          const res = await fetch(`${API_URL}/bots/public/${botId}`);
           if (res.ok) {
             const data = await res.json();
             setConfig({

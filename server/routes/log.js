@@ -1,9 +1,9 @@
-import express from 'express';
-import { getLogs } from '../controllers/logController.js';
-import { authenticate } from '../middleware/auth.js';
+const express = require('express');
+const { getLogs } = require('../controllers/logController');
+const { authenticate } = require('../middleware/auth');
 
 const router = express.Router();
 
 router.get('/', authenticate, getLogs);
 
-export default router;
+module.exports = router;

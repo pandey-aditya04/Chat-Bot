@@ -1,13 +1,13 @@
-import express from 'express';
-import { 
+const express = require('express');
+const { 
   getAllBots, 
   createBot, 
   getBotById, 
   updateBot, 
   deleteBot,
   getPublicBotConfig 
-} from '../controllers/botController.js';
-import { authenticate } from '../middleware/auth.js';
+} = require('../controllers/botController');
+const { authenticate } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -21,4 +21,4 @@ router.delete('/:id', authenticate, deleteBot);
 // Public routes
 router.get('/public/:id', getPublicBotConfig);
 
-export default router;
+module.exports = router;

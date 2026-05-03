@@ -1,14 +1,18 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
-import { supabase } from '../config/supabase.js';
+const { GoogleGenerativeAI } = require('@google/generative-ai');
+const { supabase } = require('../config/supabase');
 
-export const interact = async (req, res, next) => {
+const interact = async (req, res, next) => {
   try {
     const { query, sessionId } = req.body;
     const botId = req.params.id;
 
-    // Ensure Gemini is initialized with the API key from process.env
+    if (!process.env.GEMINI_API_KEY) {
+      return res.status(500).json({ error: 'Gemini API Key is missing on the server.' });
+    }
+
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    // Use v1 explicitly if needed
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" }, { apiVersion: 'v1' });
     
     // 1. Validation
     if (!query || query.length > 1000) {
@@ -24,35 +28,49 @@ export const interact = async (req, res, next) => {
     if (botError || !bot) return res.status(404).json({ message: 'Bot not found' });
 
     // 2. Build System Prompt from FAQs
-    const faqContext = bot.faqs.map(f => `Q: ${f.question}\nA: ${f.answer}`).join('\n\n');
+    // NOTE: Use snake_case column names as confirmed by schema
+    const faqContext = bot.faqs?.map(f => `Q: ${f.question}\nA: ${f.answer}`).join('\n\n') || '';
+    
     const systemPrompt = `
-      You are an AI assistant for ${bot.name}. 
-      Use the following FAQ information to answer the user's questions. 
-      If you don't know the answer based on the FAQ, use the fallback message: "${bot.fallback_message || "I'm not sure about that."}"
+      You are ${bot.name}, a helpful AI assistant.
       
-      FAQ Context:
-      ${faqContext}
+      PERSONALITY:
+      Tone: ${bot.tone || 'Friendly'}
       
-      User Question: ${query}
+      KNOWLEDGE BASE:
+      ${faqContext ? `Answer based ONLY on this information if possible:\n${faqContext}` : 'No specific knowledge base provided.'}
+      
+      FALLBACK:
+      If the user asks something outside the knowledge base, respond with: "${bot.fallback_message || "I'm not sure about that. Please contact our support team."}"
+      
+      CONSTRAINTS:
+      - Be concise.
+      - Stay in character.
+      - Don't mention you are an AI model.
     `;
 
-    // 3. Call AI (Using Gemini)
+    // 3. Call AI
     let responseText = '';
     let matched = false;
 
     try {
-      const result = await model.generateContent(systemPrompt);
+      const result = await model.generateContent([
+        { text: systemPrompt },
+        { text: `User: ${query}` }
+      ]);
       responseText = result.response.text();
       
-      // Heuristic for "matched": if it doesn't contain the fallback message
-      matched = !responseText.includes(bot.fallback_message || "I'm not sure about that.");
+      // Heuristic for "matched": if it doesn't contain a significant part of the fallback message
+      const fallback = (bot.fallback_message || "I'm not sure about that.").toLowerCase();
+      matched = !responseText.toLowerCase().includes(fallback.substring(0, 10));
     } catch (aiError) {
       console.error('Gemini AI Error:', aiError.message);
-      responseText = bot.fallback_message || "I'm not sure about that.";
+      responseText = bot.fallback_message || "I'm not sure about that. Please contact our support team.";
+      matched = false;
     }
 
-    // 4. Update Stats
-    await supabase.from('bots').update({ conversations_count: (bot.conversations_count || 0) + 1 }).eq('id', botId);
+    // 4. Update Stats (Non-blocking)
+    supabase.from('bots').update({ conversations_count: (bot.conversations_count || 0) + 1 }).eq('id', botId).then();
 
     // 5. Handle Logs
     let { data: log } = await supabase
@@ -77,15 +95,13 @@ export const interact = async (req, res, next) => {
 
     const timestamp = new Date().toLocaleTimeString();
     
-    // Insert user and bot messages
     if (log) {
       await supabase.from('messages').insert([
         { log_id: log.id, role: 'user', text: query, time: timestamp },
         { log_id: log.id, role: 'bot', text: responseText, time: timestamp, matched }
       ]);
 
-      // Update message count
-      await supabase.from('logs').update({ message_count: (log.message_count || 0) + 2 }).eq('id', log.id);
+      await supabase.from('logs').update({ message_count: (log.message_count || 0) + 2 }).eq('id', log.id).then();
     }
 
     res.json({ 
@@ -95,6 +111,9 @@ export const interact = async (req, res, next) => {
     });
 
   } catch (error) {
+    console.error('Interact error:', error);
     next(error);
   }
 };
+
+module.exports = { interact };
