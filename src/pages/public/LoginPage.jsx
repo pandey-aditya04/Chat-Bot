@@ -13,6 +13,7 @@ const LoginPage = () => {
   const [password, setPassword] = useState('');
   const [remember, setRemember] = useState(false);
   const [errors, setErrors] = useState({});
+  const navigate = useNavigate();
   const toast = useToast();
   const { user, login, loginWithGoogle, loading } = useAuth();
 
