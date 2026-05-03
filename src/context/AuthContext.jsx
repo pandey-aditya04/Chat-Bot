@@ -69,6 +69,22 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('token');
   };
 
+  const loginWithGoogle = async () => {
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin + '/dashboard'
+        }
+      });
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Google login error:', error.message);
+      throw error;
+    }
+  };
+
   const updateProfile = (updates) => {
     setUser(prev => ({ ...prev, ...updates }));
   };
