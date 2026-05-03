@@ -10,6 +10,7 @@ import { pricingPlans } from '../../data/pricingPlans';
 import { mockBots } from '../../data/mockBots';
 import ChatWidget from '../../components/chatbot/ChatWidget';
 import FadeIn from '../../components/ui/FadeIn';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Helmet } from 'react-helmet-async';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
