@@ -141,9 +141,9 @@ const LandingPage = () => {
           <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-accent/10 rounded-full blur-[120px]" />
         </div>
         
-        <div className="relative max-w-6xl mx-auto px-6 md:px-12">
-          <div className="grid lg:grid-cols-[1.2fr,0.8fr] gap-16 items-center">
-            <div>
+        <div className="relative max-w-7xl mx-auto px-6 md:px-12">
+          <div className="grid md:grid-cols-2 gap-12 lg:gap-20 items-center">
+            <div className="text-left">
               <FadeIn delay={0.1}>
                 <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-brand/10 border border-brand/20 text-brand text-xs font-bold uppercase tracking-widest mb-8">
                   <Zap className="w-3.5 h-3.5" /> No-code AI platform
@@ -192,7 +192,7 @@ const LandingPage = () => {
               </FadeIn>
             </div>
 
-            <div className="hidden lg:block relative">
+            <div className="hidden md:block relative">
               <div className="absolute inset-0 bg-brand/10 rounded-full blur-[120px] animate-pulse" />
               <RobotScene />
             </div>

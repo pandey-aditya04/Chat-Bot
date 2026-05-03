@@ -9,9 +9,15 @@ const RobotModel = () => {
   
   useFrame((state) => {
     const t = state.clock.getElapsedTime();
-    group.current.rotation.y = Math.sin(t / 2) * 0.1;
-    head.current.rotation.x = Math.sin(t) * 0.1;
-    head.current.rotation.y = Math.cos(t / 2) * 0.2;
+    const { x, y } = state.mouse;
+    
+    // Smoothly follow mouse
+    group.current.rotation.y = THREE.MathUtils.lerp(group.current.rotation.y, x * 0.5, 0.1);
+    head.current.rotation.x = THREE.MathUtils.lerp(head.current.rotation.x, -y * 0.4, 0.1);
+    head.current.rotation.y = THREE.MathUtils.lerp(head.current.rotation.y, x * 0.8, 0.1);
+    
+    // Add subtle idle bobbing
+    group.current.position.y = Math.sin(t) * 0.1;
   });
 
   return (
