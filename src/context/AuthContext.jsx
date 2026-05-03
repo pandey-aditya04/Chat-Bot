@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { authAPI } from '../lib/api';
+import { supabase } from '../lib/supabase';
 
 const AuthContext = createContext();
 
@@ -81,6 +82,7 @@ export const AuthProvider = ({ children }) => {
       signup, 
       logout, 
       updateProfile, 
+      loginWithGoogle,
       isAuthenticated: !!user 
     }}>
       {children}

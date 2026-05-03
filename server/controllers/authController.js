@@ -11,16 +11,16 @@ const signup = async (req, res, next) => {
 
     if (authError) throw authError;
 
-    // Create profile in our custom profiles table
+    // Create profile in our custom users table
     const { data: profileData, error: profileError } = await supabase
-      .from('profiles')
+      .from('users')
       .insert([
         { 
           id: authData.user.id, 
           name, 
           email,
-          role: 'user',
-          plan: 'Free'
+          password_hash: password, // For simplicity since supabase handles real password in auth.users
+          plan: 'free'
         }
       ])
       .select()
@@ -49,7 +49,7 @@ const login = async (req, res, next) => {
     if (authError) throw authError;
 
     const { data: profileData, error: profileError } = await supabase
-      .from('profiles')
+      .from('users')
       .select('*')
       .eq('id', authData.user.id)
       .single();
