@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Mail, Lock, Bot, ArrowRight } from 'lucide-react';
 import AuthLayout from '../../components/layout/AuthLayout';
@@ -13,10 +13,14 @@ const LoginPage = () => {
   const [password, setPassword] = useState('');
   const [remember, setRemember] = useState(false);
   const [errors, setErrors] = useState({});
-  const { login, loginWithGoogle, loading } = useAuth();
-  const { isDark } = useTheme();
-  const navigate = useNavigate();
   const toast = useToast();
+  const { user, login, loginWithGoogle, loading } = useAuth();
+
+  useEffect(() => {
+    if (user) {
+      navigate('/dashboard');
+    }
+  }, [user, navigate]);
 
   const validate = () => {
     const errs = {};
