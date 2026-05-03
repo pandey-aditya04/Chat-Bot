@@ -1,11 +1,9 @@
 @import "tailwindcss";
-@import "geist/sans";
-@import "geist/mono";
 
 @theme {
   /* Typography */
-  --font-sans: "Geist Sans", system-ui, -apple-system, sans-serif;
-  --font-mono: "Geist Mono", monospace;
+  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 
   /* Color Tokens */
   --color-brand: #6366f1;
